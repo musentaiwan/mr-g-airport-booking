@@ -18,7 +18,8 @@ function setup({sender=uid, pushCode=200, pushHeaders={}, throwPush=false, authC
       if(url.endsWith('/token'))return response(200,{access_token:'fake-access-token',expires_in:900});
       if(url.endsWith('/push')){if(throwPush)throw Error('timeout');return response(pushCode,{},pushHeaders);} throw Error('unexpected URL');
     }},
-    HtmlService:{XFrameOptionsMode:{ALLOWALL:'ALLOWALL'},createHtmlOutput:text=>({text,setXFrameOptionsMode(){return this;}})}
+    HtmlService:{XFrameOptionsMode:{ALLOWALL:'ALLOWALL'},createHtmlOutput:text=>({text,setXFrameOptionsMode(){return this;}})},
+    ContentService:{MimeType:{JSON:'application/json'},createTextOutput:text=>({text,setMimeType(mime){this.mime=mime;return this;}})}
   });
   vm.runInContext(source,ctx);
   const input={requestId:crypto.randomUUID(),nonce:crypto.randomUUID(),idToken:'test-token-'.repeat(8),kind:'booking',service:'機場接送',sections:[{title:'第一趟',rows:[['乘車人','測試旅客'],['行李','20 吋 x 1、28–30 吋 x 2'],['特殊行李','可折疊嬰兒車 x 1']]}]};
@@ -67,4 +68,18 @@ test('browser receipt contains neither credentials nor personal data; hostile no
   assert.match(output,/https:\/\/musentaiwan.github.io/);assert.doesNotMatch(output,/fake-access-token|test-token-|測試旅客|LINE_CHANNEL_SECRET/);
   s.input.nonce='</script><img src=x onerror=alert(1)>';
   const invalid=s.ctx.doPost({parameter:{request:JSON.stringify(s.input)}}).text;assert.doesNotMatch(invalid,/<img|onerror/);
+});
+test('direct JSON receipts and legacy fallback share one delivery without leaking booking data',()=>{
+  const s=setup();
+  const direct=s.ctx.doPost({parameter:{request:JSON.stringify({...s.input,responseMode:'json'})}});
+  const result=JSON.parse(direct.text);assert.equal(direct.mime,'application/json');
+  assert.equal(result.result.status,'accepted');assert.equal(result.nonce,s.input.nonce);
+  const fallback=s.ctx.doPost({parameter:{request:JSON.stringify({...s.input,nonce:crypto.randomUUID()})}});
+  assert.equal(s.pushes().length,1);assert.match(fallback.text,new RegExp(result.result.receiptId));
+  assert.doesNotMatch(direct.text,/fake-access-token|test-token-|測試旅客|LINE_CHANNEL_SECRET/);
+});
+test('direct transport still returns explicit rejection and never sends an invalid order',()=>{
+  const s=setup();s.input.kind='invalid';
+  const result=JSON.parse(s.ctx.doPost({parameter:{request:JSON.stringify({...s.input,responseMode:'json'})}}).text);
+  assert.equal(result.result.code,'INVALID_REQUEST');assert.equal(s.pushes().length,0);
 });

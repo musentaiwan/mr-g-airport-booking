@@ -28,7 +28,7 @@ submitAll=async function(){
   state.busy=true;$('next-button').disabled=true;$('back-button').disabled=true;$('next-button').textContent='正在傳送預約需求…';
   document.querySelectorAll('.step-section,#general-trip-step').forEach(n=>n.inert=true);
   try{
-    const result=await parent.MrgDelivery.send(content);
+    const result=await parent.MrgDelivery.send(content,phase=>{$('next-button').textContent=phase==='card'?'正在傳回預約小卡…':'正在送出預約需求…';});
     if(result.status==='accepted'){
       state.submission={status:result.cardStatus,text:buildText(),receiptId:result.receiptId};
       hidePanels();$('form-actions').hidden=true;document.querySelector('.steps').hidden=true;

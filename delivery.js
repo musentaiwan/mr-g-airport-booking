@@ -5,20 +5,23 @@ window.MrgLineReady=(async()=>{
   try{if(!window.liff)return false;await liff.init({liffId:MRG_CONFIG.liffId,withLoginOnExternalBrowser:false});return LineBooking.contextReady(liff);}catch{return false;}
 })();
 window.MrgDelivery=Object.freeze({
-  async send(content){
+  async send(content,onProgress=()=>{}){
     if(window.mrgSending)return {status:'error',code:'BUSY'};
-    if(!await window.MrgLineReady)return {status:'error',code:'LINE_CONTEXT'};
-    const token=liff.getIDToken(),user=liff.getDecodedIDToken()?.sub;
-    if(!token||!user)return {status:'error',code:'AUTH_REQUIRED'};
     window.mrgSending=true;
+    const progress=phase=>{try{onProgress(phase);}catch{}};
     let ownerAccepted=false;
     try{
+      progress('sending');
+      if(!await window.MrgLineReady)return {status:'error',code:'LINE_CONTEXT'};
+      const token=liff.getIDToken(),user=liff.getDecodedIDToken()?.sub;
+      if(!token||!user)return {status:'error',code:'AUTH_REQUIRED'};
       const request=await MrgNotification.prepare(content,user,sessionStorage);
       // Build the complete customer card before sending anything.
       const messages=LineBooking.messagesForContent(content,MRG_CONFIG.brandName);
       const receipt=await MrgNotification.submit({endpoint:MRG_CONFIG.notificationEndpoint,request:{...content,requestId:request.requestId,idToken:token}});
       if(receipt.status!=='accepted')return receipt;
       ownerAccepted=true;
+      progress('card');
       const result=await LineBooking.sendOnce({sdk:liff,messages,fingerprint:request.hash,storage:sessionStorage});
       return {status:'accepted',receiptId:receipt.receiptId,cardStatus:result.status};
     }catch{return ownerAccepted?{status:'accepted',cardStatus:'unknown'}:{status:'error',code:'UNAVAILABLE'};}

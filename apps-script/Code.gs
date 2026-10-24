@@ -6,7 +6,7 @@ const MRG = Object.freeze({
 });
 
 function doGet() {
-  return ContentService.createTextOutput(JSON.stringify({service: MRG.brand, version: 1}))
+  return ContentService.createTextOutput(JSON.stringify({service: MRG.brand, version: 2}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -23,7 +23,11 @@ function doPost(e) {
   }
   // No tokens, booking data or LINE identifiers are included in the browser response.
   const nonce = validUuid_(input.nonce) ? input.nonce : '';
-  const body = JSON.stringify({type:'mrg-notification-result', nonce, result})
+  const receipt = {type:'mrg-notification-result', nonce, result};
+  if (input.responseMode === 'json') {
+    return ContentService.createTextOutput(JSON.stringify(receipt)).setMimeType(ContentService.MimeType.JSON);
+  }
+  const body = JSON.stringify(receipt)
     .replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
   return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>window.top.postMessage(' + body + ',"' + MRG.origin + '");</script>')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);

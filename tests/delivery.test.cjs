@@ -26,3 +26,13 @@ test('customer card failure retains the successful owner notification result',as
 test('ordinary browser context does not create a notification',async()=>{
   const s=setup({ready:false});assert.equal((await s.api.send(content)).code,'LINE_CONTEXT');assert.equal(s.calls.length,0);
 });
+test('a simultaneous second click is blocked even while LINE initialization is pending',async()=>{
+  const s=setup(),first=s.api.send(content),second=s.api.send(content);
+  assert.equal((await second).code,'BUSY');assert.equal((await first).status,'accepted');assert.equal(s.calls.filter(c=>c.type==='owner').length,1);
+});
+test('progress changes to card only after owner acceptance; observer failures cannot break delivery',async()=>{
+  const s=setup(),phases=[];await s.api.send(content,phase=>{phases.push(phase);if(phase==='card')assert.ok(s.calls.some(c=>c.type==='owner'));});
+  assert.deepEqual(phases,['sending','card']);
+  const failed=setup({receipt:{status:'error',code:'UNKNOWN'}}),rejected=[];await failed.api.send(content,p=>rejected.push(p));assert.deepEqual(rejected,['sending']);
+  assert.equal((await setup().api.send(content,()=>{throw Error('UI callback');})).status,'accepted');
+});

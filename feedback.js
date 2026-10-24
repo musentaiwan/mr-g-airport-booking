@@ -24,12 +24,13 @@ async function sendFeedback(){
   if(window.mrgSending)return;
   if(!feedbackState.matter.trim())return showFeedbackError('請填寫申訴事項或想告訴我們的意見。');
   const buttons=[...$('app').querySelectorAll('button')];buttons.forEach(button=>button.disabled=true);
+  const submit=buttons.find(button=>button.dataset.action==='submit'),label=submit?.textContent;
   try{
-    const result=await MrgDelivery.send(feedbackContent());
+    const result=await MrgDelivery.send(feedbackContent(),phase=>{if(submit)submit.textContent=phase==='card'?'正在傳回資料小卡…':'正在送出意見…';});
     if(result.status!=='accepted')return showFeedbackError(MrgDelivery.errorMessage(result.code));
     feedbackState.view='sent';
     $('app').innerHTML=`<div class="screen-content">${heading('您的意見已送出')}<p class="sub">感謝您的寶貴意見，我們會盡快了解並與您聯繫。</p><p class="note">${result.cardStatus==='sent'?'已將資料小卡傳回 LINE，您可以返回聊天室查看。':'客服已收到資料。請返回 LINE 聊天室與客服核對，無須再次填寫。'}</p><button class="button full" data-action="close">返回 LINE</button></div>`;
-  }finally{buttons.forEach(button=>button.disabled=false);}
+  }finally{buttons.forEach(button=>button.disabled=false);if(submit)submit.textContent=label;}
 }
 document.addEventListener('input',event=>{
   const key=event.target.dataset.feedback;

@@ -1,0 +1,16 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mr.G 通知速度檢查</title>
+<style>body{font:18px/1.8 sans-serif;background:#f8f2e7;color:#584936;padding:32px;max-width:800px;margin:auto}button{font:inherit;padding:12px;margin:8px}pre{white-space:pre-wrap}</style>
+<script defer src="../config.js"></script><script defer src="../notification-service.js?v=3"></script>
+<h1>Mr.G 通知速度檢查</h1><p>只檢查服務回覆，不傳客戶資料、不發送 LINE 訊息。</p>
+<button data-transport="iframe">比較原方式</button><button data-transport="fetch">檢查快速方式</button><pre id="result">尚未檢查</pre>
+<script>
+document.addEventListener('click',async event=>{
+ const transport=event.target.dataset.transport;if(!transport)return;
+ const buttons=[...document.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+ document.getElementById('result').textContent='檢查中…';const start=performance.now();
+ const result=await MrgNotification.submit({endpoint:MRG_CONFIG.notificationEndpoint,transport,request:{requestId:crypto.randomUUID(),kind:'invalid',service:'invalid',sections:[]}});
+ const seconds=((performance.now()-start)/1000).toFixed(2);
+ document.getElementById('result').textContent=(result.code==='INVALID_REQUEST'?'連線成功':'未確認成功：'+result.code)+'｜'+(transport==='fetch'?'快速方式':'原方式')+'｜'+seconds+' 秒';
+ buttons.forEach(b=>b.disabled=false);
+});
+</script></html>
