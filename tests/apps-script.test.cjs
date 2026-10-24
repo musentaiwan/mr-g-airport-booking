@@ -29,6 +29,7 @@ function setup({sender=uid, pushCode=200, pushHeaders={}, throwPush=false, authC
 test('fixed recipient ignores caller-supplied recipient and preserves all luggage details',()=>{
   const s=setup();s.input.to=other;assert.equal(s.ctx.receive_(s.input).status,'accepted');
   const payload=JSON.parse(s.pushes()[0].options.payload);assert.equal(payload.to,uid);
+  assert.doesNotMatch(payload.messages[0].text,/測試通知/);
   assert.match(payload.messages[0].text,/28–30 吋 x 2/);assert.match(payload.messages[0].text,/嬰兒車 x 1/);
   assert.ok([...s.props.values()].filter(v=>v.includes('receiptId')).every(v=>!v.includes('測試旅客')));
 });

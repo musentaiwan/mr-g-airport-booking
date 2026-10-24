@@ -72,7 +72,7 @@ function receive_(input) {
       // Persist before sending; an interrupted request can safely reuse its LINE retry key.
       props.setProperty(key, JSON.stringify(record));
     }
-    const text = summary_(content, record.receiptId, props.getProperty('MODE') !== 'production');
+    const text = summary_(content, record.receiptId);
     let response;
     try {
       response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
@@ -143,8 +143,8 @@ function normalize_(input) {
   if (JSON.stringify(content).length > 18000) throw new Error('INVALID_REQUEST');
   return content;
 }
-function summary_(content, receipt, testing) {
-  const lines = [(testing ? '【測試通知】' : '') + '【' + MRG.brand + '｜' + content.service + '】', '案件編號：' + receipt];
+function summary_(content, receipt) {
+  const lines = ['【' + MRG.brand + '｜' + content.service + '】', '案件編號：' + receipt];
   content.sections.forEach(section => { lines.push('',section.title); section.rows.forEach(row => lines.push(row[0] + '：' + row[1])); });
   lines.push('', content.kind === 'booking' ? '此為預約需求，尚未完成訂車。請確認車型、車資與行程安排。' : '請協助了解需求並回覆客人。');
   return lines.join('\n');
