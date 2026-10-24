@@ -16,9 +16,9 @@ function doPost(e) {
     const raw = e && e.parameter && e.parameter.request;
     if (typeof raw !== 'string' || raw.length > 45000) throw new Error('INVALID_REQUEST');
     input = JSON.parse(raw);
-    result = receive_(input);
+    result = input.kind === 'recipient-setup' ? registerRecipient_(input) : receive_(input);
   } catch (error) {
-    const allowed = ['INVALID_REQUEST','NOT_CONFIGURED','PAUSED','AUTH_REQUIRED','TEST_ONLY','RATE_LIMIT','BUSY','CONFLICT','UNKNOWN','LINE_REJECTED'];
+    const allowed = ['INVALID_REQUEST','NOT_CONFIGURED','PAUSED','AUTH_REQUIRED','TEST_ONLY','RATE_LIMIT','BUSY','CONFLICT','UNKNOWN','LINE_REJECTED','SETUP_EXPIRED','RECIPIENT_NAME_MISMATCH','ACTIVATION_NOTICE_UNCONFIRMED'];
     result = {status:'error', code:allowed.includes(error.message) ? error.message : 'UNAVAILABLE'};
   }
   // No tokens, booking data or LINE identifiers are included in the browser response.
@@ -172,4 +172,62 @@ function checkSetup() {
   console.log(JSON.stringify({officialAccount:JSON.parse(bot.getContentText()).displayName,
     recipient:JSON.parse(person.getContentText()).displayName, mode:props.getProperty('MODE') || 'test',
     enabled:props.getProperty('NOTIFY_ENABLED') === 'true'}));
+}
+
+/** Editor-only handoff: verify the named recipient, then enable this account's production notices. */
+function activateProduction() {
+  return activateRecipient_(PropertiesService.getScriptProperties().getProperty('PENDING_NOTIFY_USER_ID'));
+}
+function activateRecipient_(recipient, setupKey) {
+  const props = PropertiesService.getScriptProperties();
+  if (!/^U[a-f0-9]{32}$/.test(recipient || '')) throw new Error('RECIPIENT_NOT_CONFIGURED');
+  const profile = UrlFetchApp.fetch('https://api.line.me/v2/bot/profile/' + recipient, {
+    headers:{Authorization:'Bearer ' + accessToken_()}, muteHttpExceptions:true, followRedirects:false
+  });
+  if (profile.getResponseCode() !== 200 || JSON.parse(profile.getContentText()).displayName !== 'Mr.G-Premium™接送') {
+    throw new Error('RECIPIENT_NAME_MISMATCH');
+  }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) throw new Error('BUSY');
+  try {
+    if (setupKey !== undefined) {
+      if (props.getProperty('RECIPIENT_SETUP_HASH') !== sha256_(setupKey) || Number(props.getProperty('RECIPIENT_SETUP_EXPIRES')) <= Date.now()) throw new Error('SETUP_EXPIRED');
+      const usedBy = props.getProperty('RECIPIENT_SETUP_USED_BY');
+      if (usedBy && usedBy !== recipient) throw new Error('SETUP_EXPIRED');
+      props.setProperty('RECIPIENT_SETUP_USED_BY',recipient);
+    }
+    props.setProperties({NOTIFY_USER_ID:recipient,MODE:'production',NOTIFY_ENABLED:'true'});
+    const key = 'activation:' + sha256_(recipient);
+    let record = JSON.parse(props.getProperty(key) || 'null');
+    if (!record) { record = {retryKey:Utilities.getUuid(),time:Date.now(),status:'pending'}; props.setProperty(key,JSON.stringify(record)); }
+    if (record.status !== 'accepted') {
+      if (Date.now() - record.time >= MRG.retryMs) throw new Error('UNKNOWN');
+      const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
+        method:'post', contentType:'application/json', muteHttpExceptions:true, followRedirects:false,
+        headers:{Authorization:'Bearer ' + accessToken_(),'X-Line-Retry-Key':record.retryKey},
+        payload:JSON.stringify({to:recipient,messages:[{type:'text',text:'【Mr.G尊榮接送｜通知已啟用】\n新的用車預約、其他服務需求與意見申訴，將由官方帳號傳送完整內容到您的這個 LINE 帳號。\n\n這是設定完成通知，無須派車。'}]})
+      });
+      const code = response.getResponseCode(), headers = response.getAllHeaders();
+      if (code !== 200 && !(code === 409 && Object.keys(headers).some(k => k.toLowerCase() === 'x-line-accepted-request-id' && headers[k]))) throw new Error('ACTIVATION_NOTICE_UNCONFIRMED');
+      record.status = 'accepted'; props.setProperty(key,JSON.stringify(record));
+    }
+    console.log(JSON.stringify({recipient:JSON.parse(profile.getContentText()).displayName,mode:'production',enabled:true,activationNotice:'accepted'}));
+    return {status:'accepted',receiptId:record.retryKey};
+  } finally { lock.releaseLock(); }
+}
+
+function registerRecipient_(input) {
+  const props = PropertiesService.getScriptProperties();
+  if (!validUuid_(input.nonce) || !/^[a-f0-9]{64}$/.test(input.setupKey || '') ||
+      props.getProperty('RECIPIENT_SETUP_HASH') !== sha256_(input.setupKey) ||
+      !(Number(props.getProperty('RECIPIENT_SETUP_EXPIRES')) > Date.now())) throw new Error('SETUP_EXPIRED');
+  return activateRecipient_(verifyIdentity_(input.idToken),input.setupKey);
+}
+
+/** Editor only: creates one expiring, single-recipient setup link. Never publish it in the source. */
+function createRecipientSetup() {
+  const props = PropertiesService.getScriptProperties();
+  const key = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g,'');
+  props.setProperties({RECIPIENT_SETUP_HASH:sha256_(key),RECIPIENT_SETUP_EXPIRES:String(Date.now()+86400000),RECIPIENT_SETUP_USED_BY:''});
+  console.log('https://liff.line.me/2012188603-cJnVDTcj/recipient-setup.html?k='+key);
 }
