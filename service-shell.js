@@ -21,10 +21,4 @@ window.addEventListener('message',e=>{
   }else if(data?.type==='mrg-scene'&&bookingScenes.includes(data.scene))currentScene=data.scene;
   else if(data?.type==='mrg-home')closeMrgPage();
 });
-$('phone-close').onclick=()=>{if(!window.mrgSending)closeMrgPage();};
-$('phone-back').onclick=()=>{
-  if(window.mrgSending)return;
-  if(currentScene==='choose')closeMrgPage();
-  else $('booking-frame').contentWindow.postMessage({type:'mrg-navigate',scene:'back'},location.origin);
-};
 window.MrgPageReady.then(ready=>{if(ready)go('choose');});

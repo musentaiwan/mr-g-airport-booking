@@ -26,6 +26,4 @@ document.addEventListener('click',e=>{
     go('otherReview');
   }else if(b.dataset.act==='other-submit')submitServiceRequest('other');
 });
-$('phone-back').onclick=()=>{if(window.mrgSending)return;if(state.view==='otherReview')go('other');else location.assign('./');};
-$('phone-close').onclick=()=>{if(!window.mrgSending)closeMrgPage();};
 window.MrgPageReady.then(ready=>{if(ready)go('other');});

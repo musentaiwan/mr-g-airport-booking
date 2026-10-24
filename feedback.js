@@ -45,10 +45,4 @@ document.addEventListener('click',event=>{
   else if(action==='submit')sendFeedback();
   else if(action==='close')closeMrgPage();
 });
-$('phone-back').onclick=()=>{
-  if(window.mrgSending)return;
-  if(feedbackState.view==='review'){feedbackState.view='form';renderFeedback();}
-  else closeMrgPage();
-};
-$('phone-close').onclick=()=>{if(!window.mrgSending)closeMrgPage();};
 window.MrgPageReady.then(ready=>{if(ready)renderFeedback();});
