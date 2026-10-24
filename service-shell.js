@@ -1,43 +1,30 @@
-const state={view:'home',service:'other',error:'',common:{name:'',phone:''},data:{other:{date:'',time:'',kind:'市區交通接駁',itinerary:''}}};
-const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const paths={plane:'M12 3v7L3 16v2l9-3v5l-3 2h6l-3-2v-5l9 3v-2l-9-6V3',car:'M4 10l2-5h12l2 5M3 10h18v9H3zM6 19v2m12-2v2M6 14h2m8 0h2M7 6h10',case:'M8 6V3h8v3M3 7h18v13H3zM3 12h18M10 11v3h4v-3',chat:'M4 4h16v13H9l-5 4V4zm4 6h.1m4 0h.1m4 0h.1',route:'M7 10c3-4 4-6 0-8-4 2-3 4 0 8zm10 12c3-4 4-6 0-8-4 2-3 4 0 8zM6 12c0 7 11-5 11 0'};
-const icon=name=>`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]||paths.car}"/></svg>`;
-const services={airport:{name:'機場接送',en:'AIRPORT',icon:'plane',sub:'送機・接機・來回安排'},charter:{name:'旅遊包車',en:'CHARTER',icon:'route',sub:'自由行程・多點停靠'},business:{name:'商務用車',en:'BUSINESS',icon:'case',sub:'企業接待・會議接送'}};
-const feedbackState={matter:'',date:'',place:''};
-function value(key,common=false){return(common?state.common:state.data[state.service])[key]??'';}
-function field(key,label,options={}){const common=options.common||false,v=value(key,common),attrs=`data-key="${key}" data-scope="${common?'common':'trip'}" id="f-${key}"`;let input;if(options.options){input=`<select ${attrs}>${options.options.map(x=>`<option${String(v)===x?' selected':''}>${esc(x)}</option>`).join('')}</select>`;}else if(options.area){input=`<textarea ${attrs} maxlength="${options.max||600}" placeholder="${esc(options.placeholder||'')}">${esc(v)}</textarea>`;}else{input=`<input ${attrs} type="${options.type||'text'}" value="${esc(v)}" maxlength="${options.max||160}" ${options.type==='number'?'min="0" step="1" inputmode="numeric"':''} placeholder="${esc(options.placeholder||'')}" autocomplete="off">`;}
-return `<label class="field" for="f-${key}"><span>${label}${options.optional?'<small class="optional">選填</small>':'<b class="req">*</b>'}</span>${input}</label>`;}
-function check(key,label,common=false){return `<label class="check"><input type="checkbox" data-key="${key}" data-scope="${common?'common':'trip'}" ${value(key,common)?'checked':''}><span>${label}</span></label>`;}
-const card=(title,body,n='')=>`<div class="card"><div class="card-title"><span class="number">${n}</span>${title}</div>${body}</div>`;
-const action=(text,command,primary=true)=>`<button class="button ${primary?'primary':''}" data-act="${command}">${text}</button>`;
-function header(title,sub,n){return `<div class="brand-small">Mr.G<span>尊榮接送</span></div><h2>${title}</h2><p class="sub">${sub}</p>`;}
-function other(){state.service='other';const d=state.data.other;return header('其他服務，也歡迎聊聊。','市區接駁、貨物接送與結婚禮車，歡迎留下需求。')+card('告訴我們需求',field('kind','服務項目',{options:['市區交通接駁','貨物接送','結婚禮車','其他需求']})+`<div class="grid2">${field('date','預計日期',{type:'date'})}${field('time','預計時間',{type:'time'})}</div>`+field('itinerary','需求說明',{area:true,placeholder:'請說明起訖地點、服務內容；貨物請補充件數與尺寸。'})+field('name','聯絡人',{common:true})+field('phone','聯絡電話',{common:true,type:'tel'}))+`<div class="note">此處先收集需求，服務內容與安排由客服個別確認。</div><div class="action-row">${action('核對接洽內容 →','to-other-review')}</div>`;}
-function feedback(){return header('意見申訴','Mr.G 尊榮接送｜客戶服務中心')+`<div class="card"><p class="feedback-intro">尊貴的賓客您好，我們非常重視您的寶貴意見。<br>請留下申訴事項與用車日期／地點，我們會盡快了解情況並與您聯繫。</p><label class="field" for="feedback-matter"><span>申訴事項 <b class="req">*</b></span><textarea id="feedback-matter" data-feedback="matter" maxlength="1200" placeholder="請說明遇到的情況，或您希望我們改善的地方。">${esc(feedbackState.matter)}</textarea></label><label class="field" for="feedback-date"><span>用車日期 <small class="optional">選填</small></span><input id="feedback-date" type="date" data-feedback="date" value="${esc(feedbackState.date)}"></label><label class="field" for="feedback-place"><span>用車地點 <small class="optional">選填</small></span><input id="feedback-place" data-feedback="place" maxlength="200" value="${esc(feedbackState.place)}" placeholder="上車地點、目的地或行程區間"></label></div><div class="action-row">${action('核對意見內容 →','feedback-review')}</div>`;}
-function feedbackReview(){return header('核對您的意見','請確認您填寫的事項與用車資訊。')+`<div class="summary-card"><div class="summary-head"><small>MR.G · CUSTOMER SERVICE</small><h3>意見申訴</h3></div><div class="summary-body"><p class="sub" style="white-space:pre-wrap">${esc('Mr.G 尊榮接送｜客戶服務中心\n\n申訴事項：'+feedbackState.matter+'\n用車日期：'+(feedbackState.date||'未提供')+'\n用車地點：'+(feedbackState.place||'未提供'))}</p></div><div class="summary-footer">感謝您的寶貴意見，我們重視每一位賓客的服務體驗。</div></div><div class="action-row">${action('修改內容','feedback',false)}${action('送出意見','feedback-submit')}</div>`;}
 'use strict';
+const $=id=>document.getElementById(id);
 const bookingScenes=['contact','choose','trip','return','review'];
-let frameReady=false,pendingScene=null;
-function updateScene(scene){state.view=scene;}
-function openServiceCard(){$('service-dialog').showModal();}
-function showOtherReview(){const d=state.data.other,c=state.common;return header('核對您的接洽需求','請確認聯絡方式與需求內容。')+`<div class="plain">${esc('【Mr.G｜其他服務接洽】\n項目：'+d.kind+'\n日期時間：'+d.date+' '+d.time+'\n聯絡人：'+c.name+'\n電話：'+c.phone+'\n需求：'+d.itinerary)}</div><div class="action-row"><button class="button" data-view="other">返回修改</button><button class="button primary" data-act="other-submit">送出需求</button></div>`;}
+let currentScene='choose',pendingScene=null;
 function go(scene){
   if(window.mrgSending)return;
-  state.error='';
-  if(scene==='info'){openServiceCard();return;}
-  if(![...bookingScenes,'feedback','feedbackReview','other','otherReview'].includes(scene))scene='choose';
-  updateScene(scene);
-  const booking=bookingScenes.includes(scene);
-  $('app').hidden=booking;$('booking-wrap').hidden=!booking;
-  $('screen').classList.toggle('booking-active',booking);$('screen').scrollTop=0;
-  if(booking){pendingScene=scene;$('booking-frame').contentWindow.postMessage({type:'mrg-navigate',scene},location.origin);return;}
-  const content=scene==='feedback'?feedback():scene==='feedbackReview'?feedbackReview():scene==='other'?other():showOtherReview();
-  $('app').innerHTML=`<div class="screen-content">${content}</div>`;
+  currentScene=bookingScenes.includes(scene)?scene:'choose';
+  pendingScene=currentScene;
+  $('booking-wrap').hidden=false;
+  $('screen').classList.add('booking-active');
+  const frame=$('booking-frame');
+  if(!frame.hasAttribute('src'))frame.src=frame.dataset.src;
+  else frame.contentWindow.postMessage({type:'mrg-navigate',scene:currentScene},location.origin);
 }
-function fail(text){const content=$('app').querySelector('.screen-content');content?.querySelector('.error')?.remove();content?.insertAdjacentHTML('afterbegin',`<div class="error" role="alert">${esc(text)}</div>`);$('screen').scrollTop=0;return false;}
-window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==$('booking-frame').contentWindow)return;const data=e.data;if(data?.type==='mrg-scene'){frameReady=true;pendingScene=null;}if(data?.type==='mrg-home'){go('home');return;}if(data?.type==='mrg-ready'){frameReady=true;if(pendingScene){const scene=pendingScene;pendingScene=null;$('booking-frame').contentWindow.postMessage({type:'mrg-navigate',scene},location.origin);}}else if(data?.type==='mrg-scene'&&bookingScenes.includes(state.view)){if(data.scene==='other')go('other');else updateScene(data.scene);}});
-document.addEventListener('input',e=>{const el=e.target;if(el.dataset.feedback)feedbackState[el.dataset.feedback]=el.value;if(el.dataset.key){const target=el.dataset.scope==='common'?state.common:state.data.other;target[el.dataset.key]=el.value;}});
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.scene){go(b.dataset.scene);return;}if(b.dataset.view){go(b.dataset.view);return;}const a=b.dataset.act;if(a==='close-service-card')$('service-dialog').close();else if(a==='card-booking'){$('service-dialog').close();go('choose');}else if(a==='feedback-review'){if(feedbackState.matter.trim())go('feedbackReview');else fail('請填寫申訴事項或想告訴我們的意見。');}else if(a==='to-other-review'){const d=state.data.other,c=state.common;if(!d.date||!d.time||!d.itinerary.trim()||!c.name.trim()||!/^\+?[\d\s()-]{8,22}$/.test(c.phone))fail('請填妥日期、時間、需求、聯絡人及完整電話。');else go('otherReview');}else if(a==='feedback-submit'||a==='other-submit'){submitServiceRequest(a==='feedback-submit'?'feedback':'other');}else if(a)go(a);});
-$('phone-home').onclick=()=>go('home');$('phone-back').onclick=()=>{if(bookingScenes.includes(state.view))$('booking-frame').contentWindow.postMessage({type:'mrg-navigate',scene:'back'},location.origin);else go('home');};$('service-dialog').addEventListener('click',e=>{if(e.target===$('service-dialog'))$('service-dialog').close();});
-const initialView=new URLSearchParams(location.search).get('view');
-go(initialView==='feedback'?'feedback':'choose');
-if(initialView==='services')openServiceCard();
+window.addEventListener('message',e=>{
+  if(e.origin!==location.origin||e.source!==$('booking-frame').contentWindow)return;
+  const data=e.data;
+  if(data?.type==='mrg-ready'&&pendingScene){
+    const scene=pendingScene;pendingScene=null;
+    $('booking-frame').contentWindow.postMessage({type:'mrg-navigate',scene},location.origin);
+  }else if(data?.type==='mrg-scene'&&bookingScenes.includes(data.scene))currentScene=data.scene;
+  else if(data?.type==='mrg-home')closeMrgPage();
+});
+$('phone-close').onclick=()=>{if(!window.mrgSending)closeMrgPage();};
+$('phone-back').onclick=()=>{
+  if(window.mrgSending)return;
+  if(currentScene==='choose')closeMrgPage();
+  else $('booking-frame').contentWindow.postMessage({type:'mrg-navigate',scene:'back'},location.origin);
+};
+window.MrgPageReady.then(ready=>{if(ready)go('choose');});

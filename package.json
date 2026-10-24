@@ -4,7 +4,7 @@
   "private": true,
   "description": "Mr.G尊榮接送專屬用車預約與服務入口",
   "scripts": {
-    "check": "node --check app.js && node --check booking-core.js && node --check config.js && node --check line-service.js && node --check notification-service.js && node --check delivery.js && node --check service-flow.js && node --check form-refinements.js && node --check booking-submit.js && node --check service-shell.js && node --check service-submit.js",
+    "check": "node --check app.js && node --check booking-core.js && node --check config.js && node --check line-service.js && node --check notification-service.js && node --check delivery.js && node --check service-flow.js && node --check form-refinements.js && node --check booking-submit.js && node --check service-shell.js && node --check service-submit.js && node --check entry.js && node --check feedback.js && node --check services.js && node --check other.js",
     "test": "node --test tests/*.test.cjs"
   }
 }

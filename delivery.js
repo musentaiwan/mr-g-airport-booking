@@ -24,5 +24,5 @@ window.MrgDelivery=Object.freeze({
     }catch{return ownerAccepted?{status:'accepted',cardStatus:'unknown'}:{status:'error',code:'UNAVAILABLE'};}
     finally{window.mrgSending=false;}
   },
-  errorMessage(code){return ({LINE_CONTEXT:'請從 Mr.G 官方 LINE 聊天室下方的「用車預約」開啟，再送出資料。',AUTH_REQUIRED:'LINE 登入授權已失效，請關閉表單後，從 Mr.G 官方 LINE 重新開啟。',TEST_ONLY:'目前僅開放指定帳號測試，請直接聯絡 Mr.G 客服。',RATE_LIMIT:'送出次數較多，請稍候幾分鐘，或直接聯絡客服。',UNKNOWN:'尚未確認傳送結果。請稍後按「再次確認傳送」，系統會核對同一筆資料，避免重複通知。',PAUSED:'預約通知暫時無法使用，請直接聯絡 Mr.G 客服。',BUSY:'上一筆資料正在傳送，請稍候。'})[code]||'目前無法確認傳送成功，請稍後再試，或直接聯絡 Mr.G 客服。';}
+  errorMessage(code){return ({LINE_CONTEXT:'請從 Mr.G 官方 LINE 聊天室下方的服務選單開啟，再送出資料。',AUTH_REQUIRED:'LINE 登入授權已失效，請關閉表單後，從 Mr.G 官方 LINE 重新開啟。',TEST_ONLY:'目前僅開放指定帳號測試，請直接聯絡 Mr.G 客服。',RATE_LIMIT:'送出次數較多，請稍候幾分鐘，或直接聯絡客服。',UNKNOWN:'尚未確認傳送結果。請稍後按「再次確認傳送」，系統會核對同一筆資料，避免重複通知。',PAUSED:'預約通知暫時無法使用，請直接聯絡 Mr.G 客服。',BUSY:'上一筆資料正在傳送，請稍候。'})[code]||'目前無法確認傳送成功，請稍後再試，或直接聯絡 Mr.G 客服。';}
 });

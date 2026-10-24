@@ -7,9 +7,9 @@ Mr.G 專屬的 LINE 內訂車表單。官方帳號：`@194wevnz`。
 從 Mr.G 官方 LINE 點「用車預約」→ 選機場接送、旅遊包車或商務用車 → 填寫聯絡資料與需求 → 核對送出。完整文字經獨立通知服務傳給指定管理人員，客人聊天室只保留完整資料小卡。收到客服確認前，尚未完成訂車。
 
 圖文選單 A 區必須使用 LIFF 入口：
-`https://liff.line.me/2012188603-cJnVDTcj?view=booking`
+`https://liff.line.me/2012188603-cJnVDTcj`
 
-服務介紹使用 `?view=services`，意見申訴使用 `?view=feedback`。
+服務介紹使用 `https://liff.line.me/2012188603-cJnVDTcj/services.html`，意見申訴使用 `https://liff.line.me/2012188603-cJnVDTcj/feedback.html`。三個圖塊分別開啟獨立頁面；舊的 `?view=` 連結於 LINE 初始化完成後相容導向對應頁面。
 
 網頁託管位置是 `https://musentaiwan.github.io/mr-g-airport-booking/`，不直接拿這個網址做圖文選單。
 
@@ -52,7 +52,7 @@ LIFF 會把訊息傳回開啟表單的原對話，無法在前端取得對方官
 
 ## 維護與檢查
 
-`index.html` 與 `service-shell.js` 是服務入口；`booking.html`、`app.js`、`service-flow.js`、`form-refinements.js` 是完整預約介面。`booking-submit.js`、`service-submit.js` 整理資料，`delivery.js` 協調通知與卡片，`notification-service.js` 呼叫通知服務，`line-service.js` 處理卡片。`apps-script/` 保存獨立通知程式原始碼；變更後須同步部署至上方 Google 專案。
+`index.html` 與 `service-shell.js` 僅處理預約；`services.html`/`services.js` 為獨立服務介紹，`feedback.html`/`feedback.js` 為獨立申訴表單，`other.html`/`other.js` 為獨立其他服務表單。各頁共用 `entry.js` 等待 LINE 初始化，避免轉址完成前顯示錯誤頁面。`booking.html`、`app.js`、`service-flow.js`、`form-refinements.js` 是完整預約介面。`booking-submit.js`、`service-submit.js` 整理資料，`delivery.js` 協調通知與卡片，`notification-service.js` 呼叫通知服務，`line-service.js` 處理卡片。`apps-script/` 保存獨立通知程式原始碼；變更後須同步部署至上方 Google 專案。
 
 無套件依賴、無需建置：
 
