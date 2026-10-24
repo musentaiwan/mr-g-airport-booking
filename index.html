@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102b3d">
+  <meta name="description" content="Mr.G尊榮接送機場接送預約。填寫送機、接機或來回行程，整理乘車人、航班與行李需求，再透過官方 LINE 確認接送安排。">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>Mr.G尊榮接送｜機場接送預約</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="shell">
+  <header class="brand"><div class="brandmark" aria-hidden="true">G<span>.</span></div><div><div class="brand-name">Mr.G尊榮接送</div><div class="brand-en">PRIVATE AIRPORT TRANSFER</div></div></header>
+  <div class="hero"><div class="hero-route" aria-hidden="true"><span>DEPARTURE</span><span>────────　✈　────────</span><span>ARRIVAL</span></div><div class="eyebrow">MR.G · AIRPORT TRANSFER</div><h1>從家門，到登機門。</h1><p>把接送交給 Mr.G，<br class="mobile-break">讓每一段旅程，從容開始。</p><div class="hero-tags"><span>送機・接機</span><span>單趟・來回</span><span>LINE 專人確認</span></div></div><div class="intro-note"><span class="note-dot" aria-hidden="true"></span>填寫需求 → 核對摘要 → 傳至 Mr.G 官方 LINE</div>
+  <ol class="steps" aria-label="預約進度"><li class="step active" aria-current="step"><span class="step-num">1</span>基本資料</li><li class="step"><span class="step-num">2</span>行程需求</li><li class="step"><span class="step-num">3</span>另一趟</li><li class="step"><span class="step-num">4</span>確認資料</li></ol>
+  <div id="error-banner" class="error-banner" role="alert" hidden></div>
+  <section id="step-1" class="step-section" tabindex="-1">
+    <div class="panel-head"><h2>先認識您的乘車需求</h2><p>請填寫方便司機聯繫與稱呼的資料。</p></div>
+    <div class="card"><div class="field"><span class="field-label">這次為誰預約？</span><div class="choice-group"><button class="choice" data-booking-mode="self" aria-pressed="true" type="button"><span class="choice-title">自己乘車</span><span class="choice-sub">填寫我的乘車資料</span></button><button class="choice" data-booking-mode="other" aria-pressed="false" type="button"><span class="choice-title">幫他人預約</span><span class="choice-sub">另外填寫實際乘車人</span></button></div></div>
+      <div class="field"><label id="contact-name-label" for="contact-name">乘車人姓名／稱呼<span class="required">*</span></label><input id="contact-name" autocomplete="name" maxlength="50" placeholder="例如：陳小姐" required></div>
+      <div class="field"><label id="contact-phone-label" for="contact-phone">聯絡電話<span class="required">*</span></label><input id="contact-phone" type="tel" autocomplete="tel" maxlength="22" placeholder="例如：0912 345 678" required><span class="hint">請填完整手機或市話；海外電話請加國碼。</span></div>
+      <div id="actual-rider-fields" hidden><div class="divider"></div><h3>實際乘車人</h3><div class="field"><label for="rider-name">乘車人姓名／稱呼<span class="required">*</span></label><input id="rider-name" maxlength="50" autocomplete="off" placeholder="司機接待時的稱呼"></div><div class="field"><label for="rider-phone">乘車人聯絡電話<span class="required">*</span></label><input id="rider-phone" type="tel" maxlength="22" autocomplete="off" placeholder="可聯繫到實際乘車人的電話"></div></div>
+      <div class="check-box"><label class="check"><input type="checkbox" id="remember-contact"><span>在這台裝置記住姓名與電話<br><small>僅儲存在此瀏覽器，您可以隨時清除。</small></span></label><button class="text-button" id="clear-contact" type="button">清除已記住的資料</button><p id="memory-status" class="memory-status" role="status"></p></div>
+    </div>
+    <p class="hint">姓名與電話用於本次預約聯繫。標示 * 的欄位為必填。</p>
+  </section>
+  <section id="step-2" class="step-section" tabindex="-1" hidden><div class="panel-head"><h2>安排第一趟接送</h2><p>選擇接送方向，再告訴我們時間與地點。</p></div><div class="choice-group" style="margin-bottom:22px"><button id="tabDep" class="choice" data-direction="dep" type="button" aria-pressed="true"><span class="choice-icon" aria-hidden="true">↗</span><span class="choice-title">送機</span><span class="choice-sub">從指定地點出發到機場</span></button><button id="tabArr" class="choice" data-direction="arr" type="button" aria-pressed="false"><span class="choice-icon" aria-hidden="true">↙</span><span class="choice-title">接機</span><span class="choice-sub">從機場前往指定地點</span></button></div><div id="primary-leg-mount"></div></section>
+  <section id="step-3" class="step-section" tabindex="-1" hidden><div class="panel-head"><h2>另一趟，也一起安排嗎？</h2><p id="second-description">可加填接機行程，或繼續確認單趟預約。</p></div><div id="first-leg-summary" class="mini-summary"></div><div class="choice-group" style="margin-bottom:22px"><button class="choice" id="single-trip" data-return="no" type="button" aria-pressed="true"><span class="choice-title">只訂這一趟</span><span class="choice-sub">直接核對預約資料</span></button><button class="choice" id="add-return" data-return="yes" type="button" aria-pressed="false"><span class="choice-title">再加一趟接機</span><span class="choice-sub">接送需求可分別調整</span></button></div><div id="secondary-leg-mount" hidden></div></section>
+  <section id="step-4" class="step-section" tabindex="-1" hidden><div class="panel-head"><h2>確認您的預約需求</h2><p>請再核對時間、地址與聯絡方式。</p></div><div id="review-contact"></div><div id="review-legs"></div><div class="card"><h3>預約須知</h3><ol class="policy"><li>填寫表單後，請將預約摘要傳至 Mr.G 官方 LINE，方便客服確認需求。</li><li>車型、車資、行李空間、兒童座椅與等候安排，皆由客服另行確認。</li><li>收到客服確認前，尚未完成訂車；行程變更或取消請直接聯繫客服。</li></ol><div class="check-box"><label class="check"><input id="agree-policy" type="checkbox"><span>我已核對資料，並了解預約須經客服確認。</span></label></div></div><p class="notice">姓名、電話與行程只在本頁整理；點選前往 LINE 時，會交由 LINE 帶入對話。請在對話中按下傳送。</p></section>
+  <section id="result" class="step-section" tabindex="-1" hidden>
+    <div class="card result-card"><div class="result-icon" aria-hidden="true">✓</div><span class="eyebrow">ONE MORE STEP</span><h2>摘要準備好了，<br>再傳給 Mr.G。</h2><p class="result-description">這份需求還沒有送出。請開啟官方 LINE，在對話中按下傳送，再等候客服確認。</p>
+    <div class="recipient"><span class="recipient-icon" aria-hidden="true">G.</span><div><strong>Mr.G尊榮接送</strong><p>官方 LINE · @194wevnz</p></div><span class="tag">指定收件人</span></div>
+    <p id="handoff-note" class="notice"></p><div class="result-actions"><a id="open-line" class="button primary line-button" href="https://line.me/R/oaMessage/%40194wevnz" rel="noreferrer">開啟 LINE，帶入預約摘要 <span aria-hidden="true">↗</span></a><button id="copy-summary" class="button" type="button">複製完整預約摘要</button><button id="edit-booking" class="text-button" type="button">返回修改預約資料</button></div><p id="copy-status" class="hint" role="status" aria-live="polite"></p>
+    <details class="summary-details"><summary>查看完整預約摘要</summary><textarea id="summary-text" class="plain-copy" readonly aria-label="完整預約摘要"></textarea></details></div>
+    <div class="desktop-help"><strong>在電腦上填寫？</strong><p>請複製摘要，貼到 Mr.G 的 LINE 對話。開啟官方帳號頁，也可用手機掃碼加入。</p><a href="https://line.me/R/ti/p/%40194wevnz" target="_blank" rel="noopener noreferrer">開啟 Mr.G 官方帳號 ↗</a></div>
+  </section>
+  <noscript><p class="error-banner">請開啟 JavaScript 後使用預約表單。</p></noscript>
+<div class="privacy-note">僅將需求提供給 Mr.G尊榮接送，用於本次預約聯繫。<br>未經客服確認，尚未完成訂車。</div></main>
+<footer class="actions" id="form-actions"><div class="actions-inner"><button class="button secondary" id="back-button" type="button" hidden>上一步</button><button class="button primary" id="next-button" type="button">下一步：行程需求 <span aria-hidden="true">　→</span></button></div><p class="footer-note" id="step-note">1 / 4 · 基本資料</p></footer>
+<script src="config.js" defer></script>
+<script src="booking-core.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
