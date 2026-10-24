@@ -25,10 +25,12 @@ test('summary keeps both trips, booking contact, stops and special requests',()=
   for(const value of ['Mr.G尊榮接送','代訂聯絡人：測試代訂人','第 1 趟｜送機','第 2 趟｜接機','加點 1：測試加點','特殊行李說明：可折疊 1 件','航班落地時間：22:00','尚未完成訂車'])assert.ok(text.includes(value));
 });
 test('published frontend contains only the separate Mr.G configuration without old backends',()=>{
-  const source=['index.html','app.js','config.js','booking-core.js','line-service.js'].map(file=>fs.readFileSync(require('node:path').join(__dirname,'..',file),'utf8')).join('\n');
-  assert.doesNotMatch(source,/musen|沐森|2009589320|script\.google\.com|fetch\s*\(|XMLHttpRequest|sendBeacon/i);
+  const source=['index.html','booking.html','app.js','config.js','booking-core.js','line-service.js','service-flow.js','form-refinements.js','delivery.js','booking-submit.js','service-shell.js','service-submit.js'].map(file=>fs.readFileSync(require('node:path').join(__dirname,'..',file),'utf8')).join('\n');
+  assert.doesNotMatch(source,/沐森|2009589320|XMLHttpRequest|sendBeacon/i);
+  assert.doesNotMatch(source,/審稿|示範公司|demoData|function showDelivery|mrg-preview-/);
   assert.doesNotMatch(source,/channel[_ -]?(?:secret|access.?token)/i);
   const context={};vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'..','config.js'),'utf8')+'\nthis.settings=MRG_CONFIG;',context);
   assert.equal(context.settings.lineOfficialId,'@194wevnz');
   assert.equal(context.settings.liffId,'2012188603-cJnVDTcj');
+  assert.equal(context.settings.notificationEndpoint,'https://script.google.com/macros/s/AKfycbwGtDCsQM2lLfSomp19r_m4q5hRXU4TqvKq54pZCd2G_vx4DFyLqM63903ot1AKKFqhSw/exec');
 });

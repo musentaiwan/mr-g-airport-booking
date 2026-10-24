@@ -22,23 +22,40 @@
     if(messages.length>5)throw new Error('SUMMARY_TOO_LONG');
     return messages;
   }
+  function messagesForContent(content,brand){
+    if(!content?.sections?.length)throw Error('EMPTY_CONTENT');
+    const text=(value,size='sm',color='#675035',bold=false)=>({type:'text',text:String(value),size,color,weight:bold?'bold':'regular',wrap:true});
+    const footer=content.kind==='booking'?'尚未完成訂車，請等候客服確認。':'已收到您提供的資料，我們會盡快了解並與您聯繫。';
+    const bubble=contents=>({type:'bubble',size:'mega',styles:{header:{backgroundColor:'#EDE1CB'},body:{backgroundColor:'#FFFCF5'},footer:{backgroundColor:'#F7F1E6'}},header:{type:'box',layout:'vertical',spacing:'sm',contents:[text(brand,'sm','#A47D43',true),text(content.service+(content.kind==='booking'?'預約需求':''),'xl','#493927',true)]},body:{type:'box',layout:'vertical',spacing:'md',contents},footer:{type:'box',layout:'vertical',contents:[text(footer,'xs','#857762')]}});
+    const bytes=value=>new TextEncoder().encode(JSON.stringify(value)).length;
+    const nodes=content.sections.flatMap(section=>[text(section.title,'md','#A47D43',true),...section.rows.map(([label,value])=>text(label+'：'+value))]);
+    const bubbles=[];let current=[];
+    for(const node of nodes){if(current.length&&bytes(bubble([...current,node]))>26000){bubbles.push(bubble(current));current=[];}current.push(node);if(bytes(bubble(current))>28000)throw Error('CARD_TOO_LONG');}
+    if(current.length)bubbles.push(bubble(current));
+    const messages=[];let group=[];
+    const message=items=>({type:'flex',altText:`${brand}｜${content.service}｜${content.kind==='booking'?'預約需求待確認':'資料已送出'}`,contents:items.length===1?items[0]:{type:'carousel',contents:items}});
+    for(const b of bubbles){if(group.length&&bytes(message([...group,b]))>48000){messages.push(message(group));group=[];}group.push(b);}
+    if(group.length)messages.push(message(group));
+    if(messages.length>5)throw Error('CARD_TOO_LONG');
+    return messages;
+  }
   async function sendOnce({sdk,messages,fingerprint,storage,timeoutMs=20000}){
     if(!contextReady(sdk))return {status:'not-ready'};
     let prior;
     try{prior=JSON.parse(storage.getItem(LEDGER_KEY)||'null');}catch{}
     if(prior?.fingerprint===fingerprint&&Date.now()-prior.time<86400000&&['attempting','sent','unknown'].includes(prior.status))return {status:prior.status==='sent'?'sent':'unknown',duplicate:true};
-    const save=status=>{try{storage.setItem(LEDGER_KEY,JSON.stringify({fingerprint,status,time:Date.now()}));}catch{}};
-    save('attempting');
+    const save=status=>{storage.setItem(LEDGER_KEY,JSON.stringify({fingerprint,status,time:Date.now()}));};
+    try{save('attempting');}catch{return {status:'not-ready',code:'STORAGE_UNAVAILABLE'};}
     let timer;
     try{
       await Promise.race([sdk.sendMessages(messages),new Promise((_,reject)=>{timer=setTimeout(()=>reject({code:'CLIENT_TIMEOUT'}),timeoutMs);})]);
-      save('sent');return {status:'sent'};
+      try{save('sent');}catch{}return {status:'sent'};
     }catch(error){
       const code=String(error?.code||'');
       const status=['400','401','403','INVALID_ARGUMENT','UNAUTHORIZED','FORBIDDEN'].includes(code)?'rejected':'unknown';
-      save(status);return {status};
+      try{save(status);}catch{}return {status};
     }finally{clearTimeout(timer);}
   }
-  const api=Object.freeze({contextReady,makeCard,messagesFor,splitText,sendOnce});
+  const api=Object.freeze({contextReady,makeCard,messagesFor,messagesForContent,splitText,sendOnce});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.LineBooking=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

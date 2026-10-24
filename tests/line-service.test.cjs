@@ -52,3 +52,20 @@ test('unexpected network failure is uncertain rather than a false success',async
   const env=setup(async()=>{throw new Error('network unavailable');});
   assert.equal((await line.sendOnce({...env,...request})).status,'unknown');
 });
+test('integrated customer message contains only cards and every supplied field',()=>{
+  const content={kind:'booking',service:'機場接送',sections:[{title:'聯絡資料',rows:[['聯絡人','王小姐'],['電話','0900000000']]},{title:'第一趟送機',rows:[['行李','20 吋 1 件、28–30 吋 2 件'],['加點 1','台北測試地點'],['特殊行李','可折疊嬰兒車 1 台'],['兒童座椅','增高墊 1 張'],['備註','測試備註']]},{title:'第二趟接機',rows:[['航班','BR123'],['乘車人','陳先生']]}]};
+  const messages=line.messagesForContent(content,'Mr.G尊榮接送');
+  assert.ok(messages.every(m=>m.type==='flex'));const json=JSON.stringify(messages);
+  for(const section of content.sections)for(const [label,value] of section.rows)assert.ok(json.includes(label+'：'+value));
+  assert.doesNotMatch(json,/隨附.*文字摘要/);
+});
+test('long customer cards split without losing content or exceeding LINE limits',()=>{
+  const rows=Array.from({length:18},(_,i)=>['項目'+i,('長行程'+i).repeat(180)]);
+  const messages=line.messagesForContent({kind:'feedback',service:'意見申訴',sections:[{title:'意見',rows}]},'Mr.G');
+  assert.ok(messages.length<=5);for(const m of messages)assert.ok(Buffer.byteLength(JSON.stringify(m))<50000);
+  for(const [key,value]of rows)assert.ok(JSON.stringify(messages).includes(key+'：'+value));
+});
+test('customer cards never send when duplicate-prevention storage cannot be written',async()=>{
+  const env=setup();env.storage.setItem=()=>{throw Error('unavailable');};
+  assert.equal((await line.sendOnce({...env,...request})).code,'STORAGE_UNAVAILABLE');assert.equal(env.calls(),0);
+});
