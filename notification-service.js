@@ -1,7 +1,7 @@
 'use strict';
 (function(root){
   function googleOrigin(origin){
-    try { const url=new URL(origin); return url.protocol==='https:' && (url.hostname==='script.google.com' || /(^|\.)script\.googleusercontent\.com$/.test(url.hostname)); } catch { return false; }
+    try { const url=new URL(origin); return url.protocol==='https:' && (url.hostname==='script.google.com' || url.hostname==='script.googleusercontent.com' || /^[a-z0-9-]+-script\.googleusercontent\.com$/.test(url.hostname)); } catch { return false; }
   }
   function isEndpoint(value){return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(value||'');}
   function submit({endpoint,request,timeoutMs=45000}){
