@@ -44,7 +44,7 @@ function setReturn(enabled){state.hasReturn=enabled;document.querySelectorAll('[
 const validDate = BookingCore.validDate;
 function validateLeg(t){const p=readLeg(t);const name=directionName(t);if(!p.rider)return setError(`請填寫${name}乘車人的姓名／稱呼。`,$(`${t}-rider`));if(!isPhone(p.phone))return setError(`請填寫${name}的完整聯絡電話。`,$(`${t}-phone`));if(!validDate(p.date))return setError(`請選擇${name}日期。`,$(`${t}-date`));if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.time))return setError(`請填寫${name}時間。`,$(`${t}-time`));if(new Date(p.date+'T'+p.time+':00+08:00').valueOf()<Date.now())return setError(`${name}時間已過，請確認日期與時間。`,$(`${t}-date`));if(!/^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$/.test(p.flight))return setError('請確認航班編號，例如 BR123 或 CI008。',$(`${t}-flight`));if(!p.airport)return setError('請填寫機場與航廈。',$(`${t}-airport`));if(!p.city)return setError('請選擇縣市。',$(`${t}-city`));if(!p.dist)return setError('請選擇區域。',$(`${t}-dist`));if(!p.detail)return setError('請填寫完整門牌地址或地點名稱。',$(`${t}-detail`));const emptyStop=[...$(t+'ExtraGroup').querySelectorAll('input')].find(i=>!i.value.trim());if(emptyStop)return setError('請補齊加點地址，或移除空白加點。',emptyStop);if(!Number.isInteger(p.adult)||p.adult<1||!Number.isInteger(p.child)||p.child<0||p.adult+p.child>30)return setError('每趟需至少 1 位大人，本表單每趟最多填寫 30 位，更多人數請直接洽客服。',$(`${t}-pax-0`));for(const [kind,items,max] of [['lug',p.luggage,30],['seat',p.seats,10]]){const invalid=items.findIndex(n=>!Number.isInteger(n)||n<0||n>max);if(invalid>=0)return setError('數量請填有效的整數。',$(`${t}-${kind}-${invalid}`));}if(p.special.length&&!p.specialNote)return setError('請補充特殊行李的件數、尺寸與折疊方式。',$(`${t}-special-note`));return true;}
 function selectedLegs(){return state.hasReturn?[state.first,opposite(state.first)]:[state.first];}
-function goStep(step){if(state.busy||state.submission)return;clearErrors();state.step=step;for(let i=1;i<=4;i++)$('step-'+i).hidden=i!==step;document.querySelectorAll('.step').forEach((el,i)=>{el.classList.toggle('active',i+1===step);el.classList.toggle('complete',i+1<step);if(i+1===step)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});$('back-button').hidden=step===1;$('next-button').textContent=['','下一步：行程需求　→','下一步：安排另一趟　→','下一步：確認資料　→','產生預約摘要'][step];$('step-note').textContent=`${step} / 4 · ${['','基本資料','行程需求','另一趟','確認資料'][step]}`;if(step===2)mountLegs();if(step===3){const p=readLeg(state.first);$('first-leg-summary').innerHTML=`<span class="tag">第一趟</span><div><strong>${directionName(state.first)} · ${esc(p.date)} ${esc(p.time)}</strong><p>${esc(p.airport)}</p></div>`;mountLegs();}if(step===4)renderReview();$('step-'+step).focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+function goStep(step){if(state.busy||state.submission)return;clearErrors();state.step=step;for(let i=1;i<=4;i++)$('step-'+i).hidden=i!==step;document.querySelectorAll('.step').forEach((el,i)=>{el.classList.toggle('active',i+1===step);el.classList.toggle('complete',i+1<step);if(i+1===step)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});$('back-button').hidden=step===1;$('next-button').textContent=['','下一步：行程需求　→','下一步：安排另一趟　→','下一步：確認資料　→','送出預約需求'][step];$('step-note').textContent=`${step} / 4 · ${['','基本資料','行程需求','另一趟','確認資料'][step]}`;if(step===2)mountLegs();if(step===3){const p=readLeg(state.first);$('first-leg-summary').innerHTML=`<span class="tag">第一趟</span><div><strong>${directionName(state.first)} · ${esc(p.date)} ${esc(p.time)}</strong><p>${esc(p.airport)}</p></div>`;mountLegs();}if(step===4)renderReview();$('step-'+step).focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 function nextStep(){if(state.busy||state.submission)return;clearErrors();if(state.step===1){if(!validateContact())return;persistContact();refreshInheritedContacts();seedContact(state.first);goStep(2);}else if(state.step===2){if(validateLeg(state.first))goStep(3);}else if(state.step===3){if(state.hasReturn){const other=opposite(state.first);if(!validateLeg(other))return;const a=readLeg(state.first),b=readLeg(other);if(new Date(b.date+'T'+b.time+':00+08:00')<=new Date(a.date+'T'+a.time+':00+08:00'))return setError('另一趟時間需晚於第一趟，請確認日期與時間。',$(other+'-date'));}goStep(4);}else submitAll();}
 function getGridData(t,type){const p=readLeg(t);return (type==='Lug'?LUGGAGE.map((l,i)=>p.luggage[i]?`${l.value||l.label}x${p.luggage[i]}`:''):SEATS.map((s,i)=>p.seats[i]?`${s.label}x${p.seats[i]}`:'')).filter(Boolean).join(', ')||'無';}
 function addressOf(p){return p.city+p.dist+p.detail;}
@@ -53,27 +53,53 @@ function reviewRow(label,value){return `<div class="review-row"><dt>${esc(label)
 function renderReview(){const c=getContact();$('review-contact').innerHTML=`<div class="card"><div class="card-head"><h3>${state.mode==='other'?'代訂聯絡人':'基本資料'}</h3><button class="text-button" type="button" data-edit="1">修改</button></div><p>${esc(c.name)} · ${esc(c.phone)}</p></div>`;$('review-legs').innerHTML=selectedLegs().map((t,i)=>{const p=readLeg(t);return `<article class="card"><div class="card-head"><span class="tag">第 ${i+1} 趟 · ${directionName(t)}</span><button class="text-button" data-edit="${i===0?2:3}" type="button" aria-label="修改第 ${i+1} 趟">修改行程</button></div><p class="review-date">${esc(p.date)}　${esc(p.time)}</p><p class="hint">${t==='dep'?'上車時間':'航班落地時間'} · ${esc(p.flight)}</p><div class="review-route"><div><span class="route-label">起點</span><p>${esc(t==='dep'?addressOf(p):p.airport)}</p></div>${p.stops.map(s=>`<div><span class="route-label">加點</span><p>${esc(s)}</p></div>`).join('')}<div><span class="route-label">終點</span><p>${esc(t==='dep'?p.airport:addressOf(p))}</p></div></div><dl>${reviewRow('乘車人',p.rider+' / '+p.phone)}${reviewRow('乘車人數',p.adult+' 位大人 · '+p.child+' 位小孩')}${reviewRow('行李',getGridData(t,'Lug'))}${reviewRow('兒童座椅',getGridData(t,'Seat'))}${p.special.length?reviewRow('特殊行李',p.special.join('、')+'\n'+p.specialNote):''}${p.pickupNote?reviewRow('上車補充',p.pickupNote):''}${p.memo?reviewRow('備註',p.memo):''}</dl></article>`;}).join('');}
 function buildText(payloads){return BookingCore.buildSummary(payloads,MRG_CONFIG.brandName);}
 
-function submitAll(){
+async function submitAll(){
+  if(state.busy||state.submission)return;
   clearErrors();
   if(!$('agree-policy').checked)return setError('請先核對資料，並勾選預約須知。',$('agree-policy'));
   if(!validateContact())return;
   for(const t of selectedLegs()){if(!validateLeg(t)){goStep(t===state.first?2:3);validateLeg(t);return;}}
   if(state.hasReturn){const a=readLeg(state.first),b=readLeg(opposite(state.first));if(!BookingCore.returnIsLater(a,b))return setError('另一趟時間需晚於第一趟，請返回修改行程。');}
-  const payloads=selectedLegs().map(t=>makePayload(readLeg(t)));
-  const text=buildText(payloads);
-  state.submission={text};
-  const handoff=BookingCore.lineHandoff(MRG_CONFIG.lineOfficialId,text);
-  $('open-line').href=handoff.url;
-  $('open-line').textContent=handoff.requiresCopy?'先複製摘要，再開啟 LINE ↗':'開啟 LINE，帶入預約摘要 ↗';
-  $('handoff-note').textContent=handoff.requiresCopy?'這份摘要較長，請先按「複製完整預約摘要」，開啟 LINE 後貼上並傳送。':'手機會開啟 Mr.G 的官方 LINE 並帶入摘要。若沒有帶入文字，請返回本頁複製摘要，再貼上傳送。';
-  $('summary-text').value=text;
-  $('copy-status').textContent='';
+  if(!LineBooking.contextReady(window.liff))return setError('請回到 Mr.G 官方 LINE 聊天室，點選下方「機場接送」開啟表單後再送出。目前資料尚未送出。');
+  state.busy=true;$('next-button').disabled=true;$('back-button').disabled=true;$('next-button').textContent='正在傳送預約需求…';
+  document.querySelectorAll('.step-section').forEach(section=>section.inert=true);
+  try{
+    const payloads=selectedLegs().map(t=>makePayload(readLeg(t)));
+    const text=buildText(payloads);
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
+    const fingerprint=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join('');
+    const messages=LineBooking.messagesFor(payloads,text,MRG_CONFIG.brandName);
+    state.submission={text,status:'attempting'};
+    const storage={getItem:key=>safeStorage('sessionStorage','getItem',key),setItem:(key,value)=>safeStorage('sessionStorage','setItem',key,value)};
+    const result=await LineBooking.sendOnce({sdk:window.liff,messages,fingerprint,storage});
+    state.submission.status=result.status;
+    showResult();
+  }catch{
+    if(state.submission){state.submission.status='unknown';showResult();}
+    else{document.querySelectorAll('.step-section').forEach(section=>section.inert=false);setError('目前無法整理預約資料，尚未送出。請稍後再試。');}
+  }finally{state.busy=false;$('next-button').disabled=false;$('back-button').disabled=false;$('next-button').textContent='送出預約需求';}
+}
+function showResult(){
+  const status=state.submission.status;
+  const sent=status==='sent',rejected=['rejected','not-ready'].includes(status);
+  $('result-icon').textContent=sent?'✓':'!';
+  $('result-title').textContent=sent?'預約需求已傳至 LINE':rejected?'預約需求尚未送出':'請先查看 LINE 對話';
+  $('result-description').textContent=sent?'預約卡片與完整摘要已傳回您開啟表單的 LINE 對話。請等候 Mr.G 客服確認車型、報價與接送安排；目前尚未完成訂車。':rejected?'LINE 未接受這次傳送。請確認從 Mr.G 官方 LINE 的「機場接送」開啟，並同意傳送訊息的授權。也可以複製摘要，回到 Mr.G 對話貼上。':'傳送結果不明，請先返回 LINE 查看是否已有預約訊息，再與客服核對。為避免重複預約，本頁不會自動再次傳送。';
+  $('return-line').hidden=!window.liff?.isInClient();
+  $('edit-booking').hidden=!rejected;
+  $('summary-text').value=state.submission.text;$('copy-status').textContent='';
   for(let i=1;i<=4;i++)$('step-'+i).hidden=true;
-  $('form-actions').hidden=true;
-  document.querySelector('.steps').hidden=true;
-  $('result').hidden=false;
-  $('result').focus();
-  window.scrollTo({top:0,behavior:'instant'});
+  $('form-actions').hidden=true;document.querySelector('.steps').hidden=true;
+  $('result').hidden=false;$('result').inert=false;$('result').focus();window.scrollTo({top:0,behavior:'instant'});
+}
+async function initLine(){
+  const status=$('line-status');
+  if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){status.textContent='本機預覽：正式使用請從 Mr.G 官方 LINE 的「機場接送」開啟。';return;}
+  try{
+    if(!window.liff)throw new Error('SDK_UNAVAILABLE');
+    await window.liff.init({liffId:MRG_CONFIG.liffId,withLoginOnExternalBrowser:false});
+    status.textContent=LineBooking.contextReady(window.liff)?'LINE 已連接，送出後預約訊息會回到原對話。':'請從 Mr.G 官方 LINE 聊天室下方的「機場接送」開啟，才能送出預約。';
+  }catch{status.textContent='LINE 暫時無法連接。請從 Mr.G 官方 LINE 的「機場接送」重新開啟；您仍可先填寫資料。';}
 }
 async function copySummary(){
   try{await navigator.clipboard.writeText(state.submission.text);$('copy-status').textContent='已複製。請貼到 Mr.G 官方 LINE 對話，並按下傳送。';}
@@ -86,10 +112,10 @@ function main(){
   for(const t of ['dep','arr'])$(t+'-date').min=today;
   $('next-button').onclick=nextStep;$('back-button').onclick=()=>goStep(state.step-1);$('clear-contact').onclick=clearContact;
   $('copy-summary').onclick=copySummary;
-  $('edit-booking').onclick=()=>{state.submission=null;$('result').hidden=true;$('form-actions').hidden=false;document.querySelector('.steps').hidden=false;$('agree-policy').checked=false;goStep(4);};
-  $('open-line').onclick=()=>{$('copy-status').textContent='請在 LINE 對話中按下傳送。本頁無法確認是否已送出，請以對話紀錄為準。';};
-  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||state.submission)return;if(b.dataset.bookingMode)setBookingMode(b.dataset.bookingMode);if(b.dataset.direction)switchTab(b.dataset.direction);if(b.dataset.return)setReturn(b.dataset.return==='yes');if(b.dataset.addStop)addExtra(b.dataset.addStop);if(b.dataset.edit)goStep(Number(b.dataset.edit));if(b.dataset.count){const input=$(b.dataset.count);const value=Number(input.value)||0;input.value=Math.max(Number(input.min),Math.min(Number(input.max),value+Number(b.dataset.delta)));input.dispatchEvent(new Event('input',{bubbles:true}));}});
+  $('edit-booking').onclick=()=>{state.submission=null;document.querySelectorAll('.step-section').forEach(section=>section.inert=false);$('result').hidden=true;$('form-actions').hidden=false;document.querySelector('.steps').hidden=false;$('agree-policy').checked=false;goStep(4);};
+  $('return-line').onclick=()=>window.liff.closeWindow();
+  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||state.busy||state.submission)return;if(b.dataset.bookingMode)setBookingMode(b.dataset.bookingMode);if(b.dataset.direction)switchTab(b.dataset.direction);if(b.dataset.return)setReturn(b.dataset.return==='yes');if(b.dataset.addStop)addExtra(b.dataset.addStop);if(b.dataset.edit)goStep(Number(b.dataset.edit));if(b.dataset.count){const input=$(b.dataset.count);const value=Number(input.value)||0;input.value=Math.max(Number(input.min),Math.min(Number(input.max),value+Number(b.dataset.delta)));input.dispatchEvent(new Event('input',{bubbles:true}));}});
   document.addEventListener('change',e=>{if(e.target.id==='dep-city')updateDistricts('dep');if(e.target.id==='arr-city')updateDistricts('arr');if(e.target.dataset.special)toggleSpecial(e.target.dataset.special);});
   document.addEventListener('input',e=>{e.target.removeAttribute('aria-invalid');});
 }
-document.addEventListener('DOMContentLoaded',main);
+document.addEventListener('DOMContentLoaded',()=>{main();initLine();});

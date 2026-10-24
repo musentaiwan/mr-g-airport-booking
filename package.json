@@ -4,7 +4,7 @@
   "private": true,
   "description": "Mr.G尊榮接送專屬機場接送預約表單",
   "scripts": {
-    "check": "node --check app.js && node --check booking-core.js && node --check config.js",
+    "check": "node --check app.js && node --check booking-core.js && node --check config.js && node --check line-service.js",
     "test": "node --test tests/*.test.cjs"
   }
 }

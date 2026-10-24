@@ -24,25 +24,11 @@ test('summary keeps both trips, booking contact, stops and special requests',()=
   const text=core.buildSummary([leg,{...leg,type:'接機',date:'2027-01-10',booking_time:'22:00',start:leg.end,end:leg.start}], 'Mr.G尊榮接送');
   for(const value of ['Mr.G尊榮接送','代訂聯絡人：測試代訂人','第 1 趟｜送機','第 2 趟｜接機','加點 1：測試加點','特殊行李說明：可折疊 1 件','航班落地時間：22:00','尚未完成訂車'])assert.ok(text.includes(value));
 });
-test('recipient is fixed to the Mr.G official account; summary survives URL encoding',()=>{
-  const text=core.buildSummary([leg],'Mr.G尊榮接送')+'\nA & B? # / 😀';
-  const result=core.lineHandoff('@194wevnz',text);
-  const url=new URL(result.url);
-  assert.equal(url.hostname,'line.me');
-  assert.equal(url.pathname,'/R/oaMessage/%40194wevnz/');
-  assert.equal(decodeURIComponent(url.search.slice(1)),text);
-  assert.equal(result.requiresCopy,false);
-  assert.throws(()=>core.lineHandoff('@194wevnz/other','test'));
-});
-test('long summaries use copy-and-open without dropping itinerary details',()=>{
-  const result=core.lineHandoff('@194wevnz','行程'.repeat(3000));
-  assert.equal(result.requiresCopy,true);
-  assert.equal(result.url,'https://line.me/R/oaMessage/%40194wevnz');
-});
-test('published frontend contains no old account, backend endpoint, token, or network submission',()=>{
-  const source=['index.html','app.js','config.js','booking-core.js'].map(file=>fs.readFileSync(require('node:path').join(__dirname,'..',file),'utf8')).join('\n');
+test('published frontend contains only the separate Mr.G configuration without old backends',()=>{
+  const source=['index.html','app.js','config.js','booking-core.js','line-service.js'].map(file=>fs.readFileSync(require('node:path').join(__dirname,'..',file),'utf8')).join('\n');
   assert.doesNotMatch(source,/musen|沐森|2009589320|script\.google\.com|fetch\s*\(|XMLHttpRequest|sendBeacon/i);
   assert.doesNotMatch(source,/channel[_ -]?(?:secret|access.?token)/i);
   const context={};vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'..','config.js'),'utf8')+'\nthis.settings=MRG_CONFIG;',context);
   assert.equal(context.settings.lineOfficialId,'@194wevnz');
+  assert.equal(context.settings.liffId,'2012188603-cJnVDTcj');
 });

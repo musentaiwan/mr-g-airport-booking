@@ -31,15 +31,7 @@
     rows.push('','請協助確認車型、報價與接送安排。','此為預約需求，尚未完成訂車。');
     return rows.join('\n');
   }
-  function lineHandoff(officialId,text){
-    if(!/^@[a-zA-Z0-9._-]+$/.test(officialId))throw new Error('Invalid official LINE ID');
-    const base='https://line.me/R/oaMessage/'+encodeURIComponent(officialId);
-    const proposed=base+'/?'+encodeURIComponent(text);
-    // Conservative fallback for long URLs; never truncate a customer's itinerary.
-    const requiresCopy=proposed.length>7000||text.length>4500;
-    return {url:requiresCopy?base:proposed,requiresCopy};
-  }
-  const api=Object.freeze({isPhone,validDate,returnIsLater,buildSummary,lineHandoff});
+  const api=Object.freeze({isPhone,validDate,returnIsLater,buildSummary});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   else root.BookingCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

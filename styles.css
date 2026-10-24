@@ -27,6 +27,7 @@ a{color:var(--ink)}
 .mobile-break{display:none}
 .intro-note{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:12px;margin:22px 0 28px}
 .note-dot{width:5px;height:5px;border-radius:50%;background:#a98658;flex-shrink:0}
+.line-status{border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin:0 0 25px;color:var(--muted);font-size:12px;line-height:1.8;background:#fffefa}
 .steps{margin:0 0 33px;gap:10px}
 .step.active{color:var(--ink)}
 .step.complete .step-num{background:#e4eae5;border-color:#e4eae5;color:#416856}
