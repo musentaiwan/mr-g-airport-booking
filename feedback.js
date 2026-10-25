@@ -2,7 +2,7 @@
 const feedbackState={view:'form',matter:'',date:'',place:''};
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const heading=title=>`<div class="brand-small"><span class="brand-english">Mr. G ( Gary ) Premium Shuttle <span class="brand-word">Service<sup class="brand-trademark">™</sup></span></span></div><h2>${title}</h2><p class="sub">Mr.G 尊榮接送｜客戶服務中心</p>`;
+const heading=title=>`<div class="brand-small"><span class="brand-chinese">Mr.G尊榮接送</span><span class="brand-english">Mr. G ( Gary ) Premium Shuttle <span class="brand-word">Service<sup class="brand-trademark">™</sup></span></span></div><h2>${title}</h2><p class="sub">Mr.G 尊榮接送｜客戶服務中心</p>`;
 function feedbackContent(){
   return {kind:'feedback',service:'意見申訴',sections:[{title:'客戶服務中心',rows:[['申訴事項',feedbackState.matter.trim()],['用車日期',feedbackState.date||'未提供'],['用車地點',feedbackState.place.trim()||'未提供']]}]};
 }
