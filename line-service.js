@@ -5,9 +5,9 @@
     try{return !!sdk&&sdk.isInClient()&&sdk.isLoggedIn()&&sdk.getContext()?.type==='utou'&&typeof sdk.sendMessages==='function';}catch{return false;}
   }
   function makeCard(payloads,brand){
-    const text=(value,size='sm',color='#102B3D',bold=false)=>({type:'text',text:String(value||'無'),size,color,weight:bold?'bold':'regular',wrap:true});
-    const row=(label,value)=>({type:'box',layout:'horizontal',spacing:'md',contents:[{...text(label,'xs','#687579'),flex:2},{...text(value),flex:6}]});
-    const bubbles=payloads.map((p,i)=>({type:'bubble',size:'mega',styles:{header:{backgroundColor:'#102B3D'},body:{backgroundColor:'#FFFEFA'},footer:{backgroundColor:'#F0E8DA'}},header:{type:'box',layout:'vertical',spacing:'sm',contents:[text(brand,'md','#E1C49B',true),text(`${p.type}預約需求`,'xl','#FFFFFF',true),text(`第 ${i+1} 趟 · 待客服確認`,'xs','#C0CCD0')]},body:{type:'box',layout:'vertical',spacing:'md',contents:[text(`${p.date}  ${p.booking_time}`,'xl','#102B3D',true),text(p.type==='送機'?'上車時間（台北時間）':'航班落地時間（台北時間）','xs','#687579'),{type:'separator',color:'#DCE2DF'},row('乘車人',p.userName),row('電話',p.phone),row('航班',p.flight),row('起點',p.start),row('終點',p.end),row('人數',p.pax),row('行李',p.luggage),row('座椅',p.seat)]},footer:{type:'box',layout:'vertical',contents:[text('加點及特殊需求請見隨附的完整文字摘要。','xs','#6D5B3F'),text('尚未完成訂車，請等候客服確認。','xs','#6D5B3F')]}}));
+    const text=(value,size='sm',color='#F1EDE4',bold=false)=>({type:'text',text:String(value||'無'),size,color,weight:bold?'bold':'regular',wrap:true});
+    const row=(label,value)=>({type:'box',layout:'horizontal',spacing:'md',contents:[{...text(label,'xs','#B0ABA1'),flex:2},{...text(value),flex:6}]});
+    const bubbles=payloads.map((p,i)=>({type:'bubble',size:'mega',styles:{header:{backgroundColor:'#242119'},body:{backgroundColor:'#1C1D20'},footer:{backgroundColor:'#242119'}},header:{type:'box',layout:'vertical',spacing:'sm',contents:[text(brand+'™','md','#D7B879',true),text(`${p.type}預約需求`,'xl','#F1EDE4',true),text(`第 ${i+1} 趟 · 待客服確認`,'xs','#B0ABA1')]},body:{type:'box',layout:'vertical',spacing:'md',contents:[text(`${p.date}  ${p.booking_time}`,'xl','#F1EDE4',true),text(p.type==='送機'?'上車時間（台北時間）':'航班落地時間（台北時間）','xs','#B0ABA1'),{type:'separator',color:'#4B4130'},row('乘車人',p.userName),row('電話',p.phone),row('航班',p.flight),row('起點',p.start),row('終點',p.end),row('人數',p.pax),row('行李',p.luggage),row('座椅',p.seat)]},footer:{type:'box',layout:'vertical',contents:[text('加點及特殊需求請見隨附的完整文字摘要。','xs','#C5B28F'),text('尚未完成訂車，請等候客服確認。','xs','#C5B28F')]}}));
     return {type:'flex',altText:`${brand}｜${payloads.map(p=>p.type+' '+p.date).join('／')}｜預約需求待確認`,contents:bubbles.length===1?bubbles[0]:{type:'carousel',contents:bubbles}};
   }
   function splitText(text){
@@ -24,11 +24,11 @@
   }
   function messagesForContent(content,brand){
     if(!content?.sections?.length)throw Error('EMPTY_CONTENT');
-    const text=(value,size='sm',color='#675035',bold=false)=>({type:'text',text:String(value),size,color,weight:bold?'bold':'regular',wrap:true});
+    const text=(value,size='sm',color='#F1EDE4',bold=false)=>({type:'text',text:String(value),size,color,weight:bold?'bold':'regular',wrap:true});
     const footer=content.kind==='booking'?'尚未完成訂車，請等候客服確認。':'已收到您提供的資料，我們會盡快了解並與您聯繫。';
-    const bubble=contents=>({type:'bubble',size:'mega',styles:{header:{backgroundColor:'#EDE1CB'},body:{backgroundColor:'#FFFCF5'},footer:{backgroundColor:'#F7F1E6'}},header:{type:'box',layout:'vertical',spacing:'sm',contents:[text(brand,'sm','#A47D43',true),text(content.service+(content.kind==='booking'?'預約需求':''),'xl','#493927',true)]},body:{type:'box',layout:'vertical',spacing:'md',contents},footer:{type:'box',layout:'vertical',contents:[text(footer,'xs','#857762')]}});
+    const bubble=contents=>({type:'bubble',size:'mega',styles:{header:{backgroundColor:'#242119'},body:{backgroundColor:'#1C1D20'},footer:{backgroundColor:'#242119'}},header:{type:'box',layout:'vertical',spacing:'sm',contents:[text(brand+'™','sm','#D7B879',true),text(content.service+(content.kind==='booking'?'預約需求':''),'xl','#F1EDE4',true)]},body:{type:'box',layout:'vertical',spacing:'md',contents},footer:{type:'box',layout:'vertical',contents:[text(footer,'xs','#C5B28F')]}});
     const bytes=value=>new TextEncoder().encode(JSON.stringify(value)).length;
-    const nodes=content.sections.flatMap(section=>[text(section.title,'md','#A47D43',true),...section.rows.map(([label,value])=>text(label+'：'+value))]);
+    const nodes=content.sections.flatMap(section=>[text(section.title,'md','#D7B879',true),...section.rows.map(([label,value])=>text(label+'：'+value))]);
     const bubbles=[];let current=[];
     for(const node of nodes){if(current.length&&bytes(bubble([...current,node]))>26000){bubbles.push(bubble(current));current=[];}current.push(node);if(bytes(bubble(current))>28000)throw Error('CARD_TOO_LONG');}
     if(current.length)bubbles.push(bubble(current));
