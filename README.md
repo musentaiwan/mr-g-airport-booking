@@ -28,6 +28,8 @@ Google 專案：https://script.google.com/home/projects/1MWZgJRcL5lP0idtJxbQy6wh
 
 專案屬性保存 `LINE_CHANNEL_SECRET`、`NOTIFY_USER_ID`、`TEST_USER_ID`、`MODE`、`NOTIFY_ENABLED`，不得放入 GitHub。`MODE=test` 只接受指定測試帳號；測試確認後才改為 `production` 開放其他客人。通知收件人固定由伺服器設定，前端無法自行指定。交接時需變更收件人並實際核對收件。
 
+管理人員推播的案件編號使用台北送出日期與當日流水號，例如 `20261025-第一單`、`20261025-第二單`，隔日從第一單開始。各服務共用序號，以送出日計算而非乘車日；更新前已發出的訊息與重試案件保留原編號。`CASE_SEQUENCE_V1` 只保存最後編號的日期與序號，部署時不可清除；編號分配與預約紀錄在同一把伺服器鎖內完成。重試沿用原編號與 LINE 重試鍵；已預留但傳送結果不明的號碼不回收，因此可能跳號。可在 Apps Script 編輯器執行 `checkCaseNumbering` 驗證日期及中文序號，此函式不占用序號、不發送 LINE 訊息。
+
 ## LINE 設定
 
 | 項目 | 設定 |

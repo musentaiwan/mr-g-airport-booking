@@ -5,17 +5,19 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const source = fs.readFileSync(require('node:path').join(__dirname,'../apps-script/Code.gs'),'utf8');
 const uid = 'U' + '1'.repeat(32), other = 'U' + '2'.repeat(32);
-function setup({sender=uid, pushCode=200, pushHeaders={}, throwPush=false, authCode=200, identityOverrides={},profileName='Mr.G-Premium™接送'}={}) {
+function setup({sender=uid, pushCode=200, pushHeaders={}, throwPush=false, authCode=200, identityOverrides={},profileName='Mr.G-Premium™接送',now=Date.now()}={}) {
+  let clock=now,locked=false;
+  class TestDate extends Date { constructor(...args){super(...(args.length?args:[clock]));} static now(){return clock;} }
   const props = new Map(Object.entries({NOTIFY_ENABLED:'true',NOTIFY_USER_ID:uid,TEST_USER_ID:uid,MODE:'test',LINE_CHANNEL_SECRET:'fake-secret'}));
   const calls=[];
   const store = {getProperty:k=>props.get(k)||null,setProperty:(k,v)=>props.set(k,v),setProperties:values=>Object.entries(values).forEach(([k,v])=>props.set(k,v)),getProperties:()=>Object.fromEntries(props),deleteProperty:k=>props.delete(k)};
   const response=(code,data,headers={})=>({getResponseCode:()=>code,getContentText:()=>JSON.stringify(data),getAllHeaders:()=>headers});
-  const ctx=vm.createContext({console,PropertiesService:{getScriptProperties:()=>store},CacheService:{getScriptCache:()=>({get:()=>null,put:()=>{}})},
-    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
-    Utilities:{getUuid:()=>crypto.randomUUID(),DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(alg,text)=>[...crypto.createHash('sha256').update(text).digest()]},
+  const ctx=vm.createContext({console,Date:TestDate,PropertiesService:{getScriptProperties:()=>store},CacheService:{getScriptCache:()=>({get:()=>null,put:()=>{}})},
+    LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true;},releaseLock:()=>{locked=false;}})},
+    Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:(date,timeZone,format)=>{assert.equal(format,'yyyyMMdd');const parts=new Intl.DateTimeFormat('en-US',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);return ['year','month','day'].map(type=>parts.find(p=>p.type===type).value).join('');},DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(alg,text)=>[...crypto.createHash('sha256').update(text).digest()]},
     UrlFetchApp:{fetch:(url,options)=>{calls.push({url,options});
       if(url.includes('/profile/'))return response(200,{displayName:profileName});
-      if(url.endsWith('/verify'))return response(authCode,{sub:sender,aud:'2012188603',iss:'https://access.line.me',exp:Math.floor(Date.now()/1000)+3600,...identityOverrides});
+      if(url.endsWith('/verify'))return response(authCode,{sub:sender,aud:'2012188603',iss:'https://access.line.me',exp:Math.floor(clock/1000)+3600,...identityOverrides});
       if(url.endsWith('/token'))return response(200,{access_token:'fake-access-token',expires_in:900});
       if(url.endsWith('/push')){if(throwPush)throw Error('timeout');return response(pushCode,{},pushHeaders);} throw Error('unexpected URL');
     }},
@@ -24,8 +26,83 @@ function setup({sender=uid, pushCode=200, pushHeaders={}, throwPush=false, authC
   });
   vm.runInContext(source,ctx);
   const input={requestId:crypto.randomUUID(),nonce:crypto.randomUUID(),idToken:'test-token-'.repeat(8),kind:'booking',service:'機場接送',sections:[{title:'第一趟',rows:[['乘車人','測試旅客'],['行李','20 吋 x 1、28–30 吋 x 2'],['特殊行李','可折疊嬰兒車 x 1']]}]};
-  return {ctx,props,calls,input,pushes:()=>calls.filter(c=>c.url.endsWith('/push'))};
+  return {ctx,props,calls,input,setNow:value=>{clock=value;},pushes:()=>calls.filter(c=>c.url.endsWith('/push'))};
 }
+
+test('new cases share a persistent daily sequence across services and use the submission date',()=>{
+  const s=setup({now:Date.parse('2026-10-25T02:00:00Z')});
+  s.input.sections[0].rows.push(['乘車日期','2027-01-01']);
+  const first=s.ctx.receive_(s.input);
+  assert.equal(first.receiptId,'20261025-第一單');
+  const restarted=setup({now:Date.parse('2026-10-25T03:00:00Z')});
+  for(const [key,value]of s.props)restarted.props.set(key,value);
+  restarted.input.service='商務用車';
+  assert.equal(restarted.ctx.receive_(restarted.input).receiptId,'20261025-第二單');
+  restarted.input={...restarted.input,requestId:crypto.randomUUID(),kind:'feedback',service:'意見申訴'};
+  assert.equal(restarted.ctx.receive_(restarted.input).receiptId,'20261025-第三單');
+  assert.match(JSON.parse(s.pushes()[0].options.payload).messages[0].text,/案件編號：20261025-第一單/);
+  assert.deepEqual(JSON.parse(restarted.props.get('CASE_SEQUENCE_V1')),{date:'20261025',ordinal:3});
+});
+
+test('Taipei midnight resets the sequence, while a retry keeps its original date and number',()=>{
+  const s=setup({now:Date.parse('2026-10-25T15:59:59Z')});
+  const first=s.ctx.receive_(s.input);
+  s.setNow(Date.parse('2026-10-25T16:00:00Z'));
+  const retry=s.ctx.receive_(s.input);
+  assert.equal(retry.receiptId,first.receiptId);assert.equal(retry.duplicate,true);
+  s.input.requestId=crypto.randomUUID();
+  assert.equal(s.ctx.receive_(s.input).receiptId,'20261026-第一單');
+  s.input.requestId=crypto.randomUUID();
+  assert.equal(s.ctx.receive_(s.input).receiptId,'20261026-第二單');
+  assert.equal(s.pushes().length,3);
+});
+
+test('uncertain deliveries keep both their number and LINE retry key across midnight',()=>{
+  const s=setup({now:Date.parse('2026-10-25T15:59:59Z'),throwPush:true});
+  assert.throws(()=>s.ctx.receive_(s.input),/UNKNOWN/);
+  s.setNow(Date.parse('2026-10-25T16:00:01Z'));
+  assert.throws(()=>s.ctx.receive_(s.input),/UNKNOWN/);
+  const pushes=s.pushes();assert.equal(pushes[0].options.payload,pushes[1].options.payload);
+  assert.equal(pushes[0].options.headers['X-Line-Retry-Key'],pushes[1].options.headers['X-Line-Retry-Key']);
+  assert.match(JSON.parse(pushes[1].options.payload).messages[0].text,/案件編號：20261025-第一單/);
+  assert.deepEqual(JSON.parse(s.props.get('CASE_SEQUENCE_V1')),{date:'20261025',ordinal:1});
+});
+
+test('an overlapping request cannot allocate a duplicate number while the first holds the lock',()=>{
+  const s=setup({now:Date.parse('2026-10-25T02:00:00Z')});
+  const second={...s.input,requestId:crypto.randomUUID()};
+  const fetch=s.ctx.UrlFetchApp.fetch;let overlapChecked=false;
+  s.ctx.UrlFetchApp.fetch=(url,options)=>{
+    if(url.endsWith('/push')&&!overlapChecked){overlapChecked=true;assert.throws(()=>s.ctx.receive_(second),/BUSY/);}
+    return fetch(url,options);
+  };
+  assert.equal(s.ctx.receive_(s.input).receiptId,'20261025-第一單');
+  assert.equal(s.ctx.receive_(second).receiptId,'20261025-第二單');
+  assert.equal(overlapChecked,true);assert.equal(s.pushes().length,2);
+});
+
+test('invalid requests do not reserve numbers; corrupt counters fail without sending',()=>{
+  const s=setup();s.input.kind='invalid';assert.throws(()=>s.ctx.receive_(s.input),/INVALID_REQUEST/);
+  assert.equal(s.props.has('CASE_SEQUENCE_V1'),false);s.input.kind='booking';
+  s.props.set('CASE_SEQUENCE_V1',JSON.stringify({date:'20261025',ordinal:-1}));
+  assert.throws(()=>s.ctx.receive_(s.input),/NOT_CONFIGURED/);assert.equal(s.pushes().length,0);
+});
+
+test('old accepted UUID receipts remain idempotent after the numbering upgrade',()=>{
+  const s=setup();s.ctx.receive_(s.input);
+  const key=[...s.props.keys()].find(k=>k.startsWith('receipt:')),record=JSON.parse(s.props.get(key)),legacy=crypto.randomUUID();
+  record.receiptId=legacy;s.props.set(key,JSON.stringify(record));
+  assert.equal(s.ctx.receive_(s.input).receiptId,legacy);assert.equal(s.pushes().length,1);
+});
+
+test('Chinese case ordinals include tens and zeros; the editor verification is read-only',()=>{
+  const s=setup();
+  for(const [n,word]of [[1,'一'],[2,'二'],[9,'九'],[10,'十'],[11,'十一'],[20,'二十'],[21,'二十一'],[50,'五十'],[99,'九十九'],[100,'一百'],[101,'一百零一'],[110,'一百一十'],[1001,'一千零一'],[1010,'一千零一十'],[9999,'九千九百九十九']]){
+    assert.equal(s.ctx.caseNumber_('20261025',n),'20261025-第'+word+'單');
+  }
+  const before=JSON.stringify([...s.props]);s.ctx.checkCaseNumbering();
+  assert.equal(JSON.stringify([...s.props]),before);assert.equal(s.calls.length,0);
+});
 test('fixed recipient ignores caller-supplied recipient and preserves all luggage details',()=>{
   const s=setup();s.input.to=other;assert.equal(s.ctx.receive_(s.input).status,'accepted');
   const payload=JSON.parse(s.pushes()[0].options.payload);assert.equal(payload.to,uid);

@@ -6,7 +6,7 @@ const MRG = Object.freeze({
 });
 
 function doGet() {
-  return ContentService.createTextOutput(JSON.stringify({service: MRG.brand, version: 2}))
+  return ContentService.createTextOutput(JSON.stringify({service: MRG.brand, version: 3, caseNumberFormat:'yyyyMMdd-第N單', timeZone:'Asia/Taipei'}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -68,7 +68,7 @@ function receive_(input) {
         if (r.sender === senderHash && now - r.time < 600000) recent++;
       });
       if (retained >= 500 || daily >= 50 || recent >= 5) throw new Error('RATE_LIMIT');
-      record = {hash, sender:senderHash, time:now, status:'pending', retryKey:Utilities.getUuid(), receiptId:Utilities.getUuid()};
+      record = {hash, sender:senderHash, time:now, status:'pending', retryKey:Utilities.getUuid(), receiptId:reserveCaseNumber_(props, now)};
       // Persist before sending; an interrupted request can safely reuse its LINE retry key.
       props.setProperty(key, JSON.stringify(record));
     }
@@ -92,6 +92,56 @@ function receive_(input) {
     // Keep the original retry key even if LINE rejected this attempt.
     throw new Error([400,401,403,429].includes(code) ? 'LINE_REJECTED' : 'UNKNOWN');
   } finally { lock.releaseLock(); }
+}
+
+/** Called only while receive_ holds the script lock. Retries reuse their saved receipt. */
+function reserveCaseNumber_(props, now) {
+  const date = Utilities.formatDate(new Date(now), 'Asia/Taipei', 'yyyyMMdd');
+  const key = 'CASE_SEQUENCE_V1';
+  const previous = JSON.parse(props.getProperty(key) || 'null');
+  if (previous && (!/^\d{8}$/.test(previous.date) || !Number.isInteger(previous.ordinal) || previous.ordinal < 1 || previous.ordinal > 9999)) {
+    // Do not silently reset a damaged counter and risk assigning a duplicate number.
+    throw new Error('NOT_CONFIGURED');
+  }
+  const ordinal = previous && previous.date === date ? previous.ordinal + 1 : 1;
+  const receipt = caseNumber_(date, ordinal);
+  // Reserve before any outbound call. An uncertain send must never have its number recycled.
+  props.setProperty(key, JSON.stringify({date, ordinal}));
+  return receipt;
+}
+
+function caseNumber_(date, ordinal) {
+  if (!/^\d{8}$/.test(date) || !Number.isInteger(ordinal) || ordinal < 1 || ordinal > 9999) throw new Error('NOT_CONFIGURED');
+  const digits = '零一二三四五六七八九', units = ['', '十', '百', '千'];
+  const value = String(ordinal);
+  let chinese = '', pendingZero = false;
+  for (let i = 0; i < value.length; i++) {
+    const digit = Number(value[i]), place = value.length - i - 1;
+    if (!digit) { if (chinese) pendingZero = true; continue; }
+    if (pendingZero) chinese += '零';
+    if (!(digit === 1 && place === 1 && !chinese)) chinese += digits[digit];
+    chinese += units[place];
+    pendingZero = false;
+  }
+  return date + '-第' + chinese + '單';
+}
+
+/** Editor-only, read-only verification. Does not reserve numbers or send LINE messages. */
+function checkCaseNumbering() {
+  const dates = [
+    ['2026-10-25T15:59:59Z','20261025'],
+    ['2026-10-25T16:00:00Z','20261026']
+  ];
+  dates.forEach(pair => {
+    if (Utilities.formatDate(new Date(pair[0]), 'Asia/Taipei', 'yyyyMMdd') !== pair[1]) throw new Error('TIMEZONE_CHECK_FAILED');
+  });
+  const samples = [[1,'第一單'],[2,'第二單'],[10,'第十單'],[21,'第二十一單'],[101,'第一百零一單']];
+  const examples = samples.map(pair => {
+    const actual = caseNumber_('20261025', pair[0]);
+    if (actual !== '20261025-' + pair[1]) throw new Error('NUMBER_CHECK_FAILED');
+    return actual;
+  });
+  console.log(JSON.stringify({checks:'passed', timeZone:'Asia/Taipei', examples, messagesSent:0, numbersReserved:0}));
 }
 
 function verifyIdentity_(token) {
