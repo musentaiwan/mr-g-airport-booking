@@ -32,7 +32,7 @@ submitAll=async function(){
     if(result.status==='accepted'){
       state.submission={status:result.cardStatus,text:buildText(),receiptId:result.receiptId};
       hidePanels();$('form-actions').hidden=true;document.querySelector('.steps').hidden=true;
-      $('result-icon').textContent='✓';$('result-title').textContent='預約需求已送出';
+      $('result-icon').textContent='✓';$('result').querySelector('.recipient .tag').textContent=serviceNames[state.service];$('result-title').textContent='預約需求已送出';
       $('result-description').textContent=result.cardStatus==='sent'?'預約小卡已傳回 LINE，請等候客服確認車型、車資與行程安排。收到客服確認前，尚未完成訂車。':'客服已收到預約需求。預約小卡的傳送尚未確認，請返回 Mr.G 的 LINE 聊天室與客服核對，無須重填預約。';
       $('summary-text').value=state.submission.text;$('summary-text').closest('details')?.setAttribute('hidden','');
       $('copy-summary').hidden=true;$('copy-status').textContent='';$('edit-booking').hidden=true;
@@ -43,5 +43,5 @@ submitAll=async function(){
       if(result.code==='UNKNOWN')$('next-button').textContent='再次確認傳送';
     }
   }catch{setError('目前無法確認傳送結果，請返回 LINE 與客服核對。');}
-  finally{state.busy=false;$('next-button').disabled=false;$('back-button').disabled=false;document.querySelectorAll('.step-section,#general-trip-step').forEach(n=>n.inert=false);if($('next-button').textContent!=='再次確認傳送')$('next-button').textContent='送出預約需求';}
+  finally{state.busy=false;$('next-button').disabled=false;$('back-button').disabled=false;document.querySelectorAll('.step-section,#general-trip-step').forEach(n=>n.inert=false);if(!$('next-button').textContent.startsWith('再次確認傳送'))$('next-button').textContent='送出預約需求';}
 };

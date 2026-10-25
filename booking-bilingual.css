@@ -1,0 +1,37 @@
+/* Two clear reading levels: Chinese first, English underneath. No fixed text heights. */
+.en-caption{display:block;margin-top:5px;font:400 12px/1.55 Arial,"Microsoft JhengHei",sans-serif;letter-spacing:.015em;color:#bcb5a7;white-space:normal;overflow-wrap:anywhere;word-break:normal;text-transform:none}
+.shell{max-width:720px;padding:26px 20px 190px}
+.brand{padding-bottom:25px}.panel-head{margin-bottom:26px}.panel-head h2{line-height:1.5}.panel-head h2>.en-caption{font-size:15px;color:#d3bc91;margin-top:7px}
+.panel-head p{margin-top:12px;line-height:1.75}.panel-head p>.en-caption{margin-top:5px}
+.card{padding:23px 21px;margin-bottom:20px}.card-head{align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.card h3{font-size:16px;line-height:1.6}.card h3>.en-caption{color:#c9b99b;font-size:12px}
+.card-head>.index{display:none}.field{margin-top:24px}.field>label,.field-label{font-size:14px;line-height:1.65;margin-bottom:11px}
+.field>label>.en-caption,.field-label>.en-caption{color:#c8bba6}.optional{font-size:12px;white-space:nowrap}
+.row{align-items:start;gap:16px}.row>*{min-width:0}.select-wrap{min-width:0;max-width:100%}.select-english{margin:7px 2px 0;color:#cbb99a}
+input,select,textarea{min-height:50px;font-size:16px;max-width:100%}.date-time-row input{font-size:16px;height:50px}
+select{padding-right:26px;text-overflow:ellipsis}.example-english{margin:8px 2px 0;font-size:12px;color:#aaa69e}
+.choice-group{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.choice{min-width:0;padding:20px 17px;line-height:1.6}
+.choice .choice-title{padding-right:10px;font-size:16px}.choice-title>.en-caption{color:#d7c29b;font-size:13px;margin-top:5px}
+.choice .choice-sub{margin-top:13px;font-size:12px}.choice-sub>.en-caption{font-size:12px;line-height:1.55;margin-top:5px}
+.service-choice{padding:25px 24px!important;margin:17px 0}.service-choice .choice-title{padding-right:32px;font-size:19px}.service-choice .choice-title>.en-caption{font-size:14px;color:#c6b18b;letter-spacing:.04em}
+.service-choice .choice-sub{border-top:1px solid #3e382e;padding-top:13px;margin-top:15px;padding-right:0}.service-choice:after{top:28px;right:23px}
+.count-row{gap:16px;padding:18px 0;align-items:center}.count-label{font-size:14px;min-width:0;flex:1}.count-label>.en-caption{font-size:12px;margin-top:4px}
+.counter{flex:0 0 auto;gap:2px}.counter button{width:40px;height:40px;min-height:40px}.counter input{width:38px;min-height:40px}.counter button,.remove{touch-action:manipulation}
+.special-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px;margin:21px 0}.check{gap:12px;line-height:1.7}.check>span{min-width:0}.check input{margin-top:3px;min-height:21px}.check>span>.en-caption{margin-top:6px}
+.check-box small{display:block;margin-top:12px}.divider,.check-box{margin-top:25px}.hint{line-height:1.75}.hint>.en-caption{margin-top:5px}
+.stop-row{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:6px 8px;align-items:start}.stop-row input{grid-column:1;grid-row:1}.stop-row .remove{grid-column:2;grid-row:1}.stop-row .example-english{grid-column:1;grid-row:2;margin-top:0}
+.steps{gap:7px;margin:0 0 30px}.step{min-width:0;line-height:1.5;font-size:11px}.step>.en-caption{font-size:10px;line-height:1.4;margin-top:5px;letter-spacing:0}
+.step-num{width:28px;height:28px;margin-bottom:8px}.step:not(:last-child):after{top:14px}.step.active>.en-caption{color:#e0c792}
+.actions{padding:13px 18px max(13px,env(safe-area-inset-bottom));}.actions-inner{align-items:stretch;gap:12px}.actions .button{display:block;min-width:0;min-height:64px;padding:12px 14px;line-height:1.55;font-size:14px;letter-spacing:0}.actions .button.secondary{flex:0 0 85px}.button>.en-caption{color:inherit;font-size:12px;margin-top:4px}.button.primary>.en-caption{color:#3d301e}.footer-note{margin-top:10px;font-size:11px;line-height:1.5}.footer-note>.en-caption{font-size:10px;margin-top:2px}
+.text-button{line-height:1.7;text-decoration:none;border-bottom:1px solid #72603f;margin:6px 0;padding:9px 0;max-width:100%;white-space:normal}.text-button>.en-caption{color:#c7b28e;margin-top:3px}.subtle-button{padding:13px 16px;line-height:1.6}.subtle-button>.en-caption{color:#c9b99b}
+.mini-summary{align-items:flex-start;padding:18px;gap:14px}.mini-summary>div{min-width:0;overflow-wrap:anywhere}.tag{max-width:100%;white-space:normal;line-height:1.5;border-radius:8px;padding:7px 10px}.tag>.en-caption{color:#d8c297;font-size:11px;margin-top:3px}
+.review-row{grid-template-columns:minmax(92px,.8fr) minmax(0,1.6fr);gap:18px;font-size:14px;padding:12px 0;margin:0;border-bottom:1px solid #39352d}.review-row:last-child{border-bottom:0}.review-row dt{color:#d0c3ac}.review-row dd{overflow-wrap:anywhere;min-width:0}.review-row .en-caption{font-size:12px}.review-date{font-size:20px;white-space:normal;overflow-wrap:anywhere}.review-route p{line-height:1.85}.review-route .route-label{font-size:13px}.review-route .route-label>.en-caption{margin-top:2px}.review-route>div+div{margin-top:23px}
+.policy{padding-left:21px;margin-top:18px;font-size:13px;line-height:1.85}.policy li{padding:8px 0}.policy li>.en-caption{margin-top:7px}.result-description{line-height:1.85;margin-top:18px}.result-description>.en-caption{margin-top:12px}.result-card h2>.en-caption{font-size:15px;color:#d3bc91}.error-banner{font-size:14px;line-height:1.75}.error-banner>.en-caption{color:#ffcabd;margin-top:9px}
+.line-status{font-size:12px;line-height:1.8;margin:0 0 25px}.line-status>.en-caption{color:#bdb3a1}.recipient{flex-wrap:wrap;gap:12px}.recipient>div{min-width:0}.recipient p{overflow-wrap:anywhere}
+@media(max-width:480px){.row{grid-template-columns:minmax(0,1fr)}.shell{padding:24px 18px 190px}.card{padding:22px 18px}.card-head .text-button{margin:0}.brand-name{font-size:17px}.steps{gap:4px}.review-row{grid-template-columns:minmax(80px,.85fr) minmax(0,1.4fr);gap:14px}}
+@media(max-width:359px){.shell{padding-left:14px;padding-right:14px}.card{padding:20px 15px}.choice-group,.special-grid{grid-template-columns:minmax(0,1fr)}.choice{padding:18px}.count-row{gap:10px}.counter button{width:36px;height:36px;min-height:36px}.counter input{width:30px}.review-row{grid-template-columns:minmax(0,1fr);gap:8px}.actions{padding-left:12px;padding-right:12px}.actions .button.secondary{flex-basis:66px}.actions .button{padding:11px 8px}.step{font-size:10px}.step>.en-caption{font-size:10px}.service-choice{padding:22px 20px!important}}
+
+.step:not(:last-child):after{display:none}
+
+.button{flex-direction:column;gap:3px;text-align:center}
+.card p,[data-customer-copy]{min-width:0;overflow-wrap:anywhere}

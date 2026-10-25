@@ -63,3 +63,11 @@ npm test
 ```
 
 GitHub Pages 從 `main` 根目錄部署。Node 測試使用模擬服務，不會實際發訊。完整驗收須在手機 LINE 從用車預約開啟，確認客人卡片、指定管理人員的完整文字與返回聊天功能。電腦測試不能取代此步驟。
+
+## 預約頁中英排版
+
+三種預約的中文介面下方均提供英文輔助文字，涵蓋聯絡資料、行程、回程、核對、驗證提示與傳送結果。`booking-english.js` 集中管理翻譯，`booking-bilingual.js` 在畫面更新時補上英文，`booking-bilingual.css` 負責行距、窄螢幕改列與長內容換行。翻譯只用於顯示，不更改送往通知服務的欄位值，也不翻譯客人填寫的姓名、地址或備註。
+
+原生下拉選單顯示中英選項，控制項下方另有完整英文；選項的原始中文值維持不變。縣市與行政區英文名稱參考 [TaiwanAddressCityAreaRoadChineseEnglishJSON](https://github.com/donma/TaiwanAddressCityAreaRoadChineseEnglishJSON/blob/master/CityCountyData.json)，保留既有表單的台／臺字形。
+
+更新這組檔案時須一併更新 `booking.html` 的資源版本、`index.html` 的表單版本及 LINE 預約入口的版本參數。版面驗收至少涵蓋 320、375、430、720 像素寬、三種服務、代訂、單趟／來回、加點、長英文姓名／地址及各種傳送結果；模擬送出不得呼叫正式通知服務。
